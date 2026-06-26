@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Blood Donation Finder - Phase 1
 
 A web application to connect blood donors with those in need. This is Phase 1 of the project, which includes user authentication and basic application structure.
@@ -220,3 +221,6 @@ ISC
 ## Contact
 
 For questions or support, please open an issue in the repository.
+=======
+# BloodOcean
+>>>>>>> 22ab42806cf03e14c1da2dd7ba0f3005f1cf3da6

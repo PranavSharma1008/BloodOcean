@@ -1,0 +1,99 @@
+# My Changes / Tasks To Do
+
+## Tasks for User to Complete
+
+### Immediate Tasks
+- [x] Review and test the notification system
+- [ ] Set up MongoDB Atlas account and cluster
+- [ ] Configure MongoDB Atlas IP whitelist
+- [ ] Create MongoDB database user
+- [ ] Get MongoDB connection string
+- [ ] Deploy backend to Render
+- [ ] Deploy frontend to Vercel
+- [ ] Configure environment variables in production
+- [ ] Set up production JWT secret (strong random string)
+- [ ] Update CORS with frontend URL
+
+### Testing Tasks
+- [x] Test user registration and login flow
+- [x] Test profile completion and validation
+- [x] Test geolocation detection and manual input
+- [x] Test nearby donor search with different radii
+- [x] Test emergency request creation and status updates
+- [x] Test notification system
+- [x] Test notification panel and mark as read functionality
+- [ ] Test all API endpoints in production
+- [ ] Test admin dashboard functionality
+- [ ] Test donor matching on emergency request creation
+
+### Deployment Tasks
+- [x] Create deployment configuration files (vercel.json, render.yaml)
+- [x] Add security headers (Helmet) to backend
+- [x] Update CORS configuration for production
+- [x] Improve error handling middleware
+- [x] Create .env.example files for backend and frontend
+- [x] Create DEPLOYMENT.md guide
+- [x] Create production build script (scripts/build.sh)
+- [ ] Deploy backend to Render
+- [ ] Deploy frontend to Vercel
+- [ ] Configure custom domains (optional)
+- [ ] Set up monitoring and logging
+
+### Documentation Tasks
+- [ ] Update README with deployment instructions
+- [ ] Add troubleshooting guide
+- [ ] Create user manual for the application
+- [ ] Document API rate limits (if implemented)
+- [ ] Add screenshots to documentation
+
+### Enhancement Tasks (Future)
+- [ ] Implement real-time notifications with WebSocket
+- [ ] Add email notification system
+- [ ] Add SMS notification for urgent requests
+- [ ] Implement blood donation history tracking
+- [ ] Add donor badges and achievements system
+- [ ] Implement rating system for donors
+- [ ] Add multi-language support
+- [ ] Create mobile app (React Native)
+- [ ] Integrate with blood banks API
+- [ ] Add appointment scheduling system
+
+### Security Tasks
+- [ ] Implement rate limiting on API endpoints
+- [ ] Add security headers (Helmet)
+- [ ] Implement input sanitization
+- [ ] Add NoSQL injection prevention
+- [ ] Set up Redis for caching
+- [ ] Implement request logging
+- [ ] Add API versioning
+
+### Admin Dashboard (Phase 7)
+- [x] Create admin middleware for role-based access
+- [x] Create admin controller for user management
+- [x] Create admin routes
+- [x] Create Admin Dashboard page
+- [x] Implement user list with search and filters
+- [x] Add user edit/delete functionality
+- [ ] Create donation tracking system (future enhancement)
+- [x] Add statistics and analytics
+- [ ] Implement system settings management (future enhancement)
+
+### Performance Optimization
+- [ ] Optimize database queries
+- [ ] Add database indexes for frequently queried fields
+- [ ] Implement caching strategy
+- [ ] Optimize frontend bundle size
+- [ ] Add lazy loading for components
+- [ ] Implement code splitting
+
+### Monitoring & Analytics
+- [ ] Set up application monitoring (e.g., Sentry)
+- [ ] Add analytics tracking
+- [ ] Implement error tracking
+- [ ] Set up uptime monitoring
+- [ ] Add performance monitoring
+
+## Notes
+- This file is for tracking tasks that need manual completion or review
+- Update this file as you complete tasks or identify new ones
+- Prioritize tasks based on project needs and deadlines

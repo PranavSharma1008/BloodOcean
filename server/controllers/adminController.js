@@ -142,4 +142,8 @@ module.exports = {
   getAllEmergencyRequests,
   deleteEmergencyRequest,
   getStatistics,
-};
+  };
+
+
+
+  

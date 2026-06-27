@@ -85,6 +85,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/api/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(response.data.user);
+      return { success: true, user: response.data.user };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to refresh user data',
+      };
+    }
+  };
+
   const updateProfile = async (profileData) => {
     try {
       const response = await api.put('/api/profile', profileData, {
@@ -172,7 +187,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, token, login, register, logout, getProfile, updateProfile, updateLocation, getNotifications, markNotificationAsRead, markAllNotificationsAsRead }}>
+    <AuthContext.Provider value={{ user, loading, token, login, register, logout, getProfile, refreshUser, updateProfile, updateLocation, getNotifications, markNotificationAsRead, markAllNotificationsAsRead }}>
       {children}
     </AuthContext.Provider>
   );

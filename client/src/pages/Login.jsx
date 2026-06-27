@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BloodDropIcon from '../assets/BloodDropIcon';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -32,12 +33,16 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
+        <div className="flex flex-col items-center">
+          <BloodDropIcon />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Blood Donation Finder
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Sign in to your account
+          </p>
+          <p className="mt-4 text-center text-sm font-medium text-red-600">
+            "It is not blood, it is a lifesaver for someone"
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

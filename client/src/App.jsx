@@ -9,6 +9,7 @@ import Location from './pages/Location';
 import Search from './pages/Search';
 import CreateEmergency from './pages/CreateEmergency';
 import EmergencyRequests from './pages/EmergencyRequests';
+import Camps from './pages/Camps';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -66,6 +67,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EmergencyRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/camps"
+              element={
+                <ProtectedRoute>
+                  <Camps />
                 </ProtectedRoute>
               }
             />

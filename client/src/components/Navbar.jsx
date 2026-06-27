@@ -38,6 +38,12 @@ const Navbar = () => {
                 >
                   Emergency Requests
                 </Link>
+                <Link
+                  to="/camps"
+                  className="text-white hover:text-red-200 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Our Camps
+                </Link>
                 {user.role === 'admin' && (
                   <Link
                     to="/admin"

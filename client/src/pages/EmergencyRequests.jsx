@@ -93,7 +93,7 @@ const EmergencyRequests = () => {
                   id="searchQuery"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="e.g. Ram, neelam, 9317290976"
+                  placeholder="e.g. Ram, Hospital, 9317290976"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>

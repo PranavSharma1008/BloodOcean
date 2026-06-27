@@ -33,6 +33,7 @@ app.use('/api/users', require('./routes/location'));
 app.use('/api/donors', require('./routes/search'));
 app.use('/api/emergency', require('./routes/emergency'));
 app.use('/api/notifications', require('./routes/notification'));
+app.use('/api/camps', require('./routes/camps'));
 app.use('/api/admin', require('./routes/admin'));
 
 // Basic route

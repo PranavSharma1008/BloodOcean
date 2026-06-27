@@ -93,6 +93,26 @@ const createEmergencyRequest = async (req, res) => {
 // @access  Private
 const getEmergencyRequests = async (req, res) => {
   try {
+    // Auto-remove requests older than 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    await EmergencyRequest.deleteMany({
+      createdAt: { $lt: sevenDaysAgo },
+      status: 'active'
+    });
+
+    // Delete associated notifications for removed requests
+    const oldRequests = await EmergencyRequest.find({
+      createdAt: { $lt: sevenDaysAgo }
+    }).select('_id');
+    
+    if (oldRequests.length > 0) {
+      const oldRequestIds = oldRequests.map(r => r._id);
+      await Notification.deleteMany({ requestId: { $in: oldRequestIds } });
+    }
+
+    // Get active requests sorted by date (newest first)
     const emergencyRequests = await EmergencyRequest.find({ status: 'active' })
       .populate('requester', 'name email phone')
       .sort({ createdAt: -1 });
@@ -128,17 +148,12 @@ const getEmergencyRequestById = async (req, res) => {
   }
 };
 
-// @desc    Update emergency request status
+// @desc    Update emergency request
 // @route   PUT /api/emergency/:id
 // @access  Private
 const updateEmergencyRequest = async (req, res) => {
   try {
-    const { status } = req.body;
-
-    const validStatuses = ['active', 'fulfilled', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
-    }
+    const { patientName, bloodGroup, hospital, contactNumber, notes, status, latitude, longitude } = req.body;
 
     const emergencyRequest = await EmergencyRequest.findById(req.params.id);
 
@@ -151,7 +166,38 @@ const updateEmergencyRequest = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this request' });
     }
 
-    emergencyRequest.status = status;
+    // Validate blood group if provided
+    if (bloodGroup) {
+      const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+      if (!validBloodGroups.includes(bloodGroup)) {
+        return res.status(400).json({ message: 'Invalid blood group' });
+      }
+    }
+
+    // Validate status if provided
+    if (status) {
+      const validStatuses = ['active', 'fulfilled', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: 'Invalid status' });
+      }
+    }
+
+    // Update fields if provided
+    if (patientName) emergencyRequest.patientName = patientName;
+    if (bloodGroup) emergencyRequest.bloodGroup = bloodGroup;
+    if (hospital) emergencyRequest.hospital = hospital;
+    if (contactNumber) emergencyRequest.contactNumber = contactNumber;
+    if (notes !== undefined) emergencyRequest.notes = notes;
+    if (status) emergencyRequest.status = status;
+
+    // Update location if provided
+    if (latitude && longitude) {
+      emergencyRequest.requesterLocation = {
+        type: 'Point',
+        coordinates: [longitude, latitude],
+      };
+    }
+
     await emergencyRequest.save();
 
     res.status(200).json({
@@ -164,9 +210,40 @@ const updateEmergencyRequest = async (req, res) => {
   }
 };
 
+// @desc    Delete emergency request
+// @route   DELETE /api/emergency/:id
+// @access  Private
+const deleteEmergencyRequest = async (req, res) => {
+  try {
+    const emergencyRequest = await EmergencyRequest.findById(req.params.id);
+
+    if (!emergencyRequest) {
+      return res.status(404).json({ message: 'Emergency request not found' });
+    }
+
+    // Check if user is the requester
+    if (emergencyRequest.requester.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this request' });
+    }
+
+    await EmergencyRequest.findByIdAndDelete(req.params.id);
+
+    // Delete associated notifications
+    await Notification.deleteMany({ requestId: req.params.id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Emergency request deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createEmergencyRequest,
   getEmergencyRequests,
   getEmergencyRequestById,
   updateEmergencyRequest,
+  deleteEmergencyRequest,
 };

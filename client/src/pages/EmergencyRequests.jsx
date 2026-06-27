@@ -35,6 +35,68 @@ const EmergencyRequests = () => {
     navigate('/search', { state: { bloodGroup, requestId } });
   };
 
+  const handleDeleteRequest = async (requestId) => {
+    if (!window.confirm('Are you sure you want to delete this request?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/api/emergency/${requestId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRequests(requests.filter(req => req._id !== requestId));
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to delete request');
+    }
+  };
+
+  const getRequestAge = (createdAt) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInHours = (now - created) / (1000 * 60 * 60);
+
+    if (diffInHours < 12) {
+      return { label: 'Recent', category: 'recent' };
+    } else if (diffInHours < 24) {
+      return { label: 'Today', category: 'today' };
+    } else if (diffInHours < 48) {
+      return { label: '1 day ago', category: '1day' };
+    } else if (diffInHours < 72) {
+      return { label: '2 days ago', category: '2days' };
+    } else if (diffInHours < 96) {
+      return { label: '3 days ago', category: '3days' };
+    } else if (diffInHours < 120) {
+      return { label: '4 days ago', category: '4days' };
+    } else if (diffInHours < 144) {
+      return { label: '5 days ago', category: '5days' };
+    } else if (diffInHours < 168) {
+      return { label: '6 days ago', category: '6days' };
+    } else {
+      return { label: '7 days ago', category: '7days' };
+    }
+  };
+
+  const groupRequestsByAge = (reqs) => {
+    const groups = {
+      recent: [],
+      today: [],
+      '1day': [],
+      '2days': [],
+      '3days': [],
+      '4days': [],
+      '5days': [],
+      '6days': [],
+      '7days': [],
+    };
+
+    reqs.forEach((req) => {
+      const age = getRequestAge(req.createdAt);
+      groups[age.category].push({ ...req, ageLabel: age.label });
+    });
+
+    return groups;
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString();
@@ -54,6 +116,8 @@ const EmergencyRequests = () => {
 
     return matchesSearch && matchesBloodGroup;
   });
+
+  const groupedRequests = groupRequestsByAge(filteredRequests);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -146,59 +210,95 @@ const EmergencyRequests = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRequests.map((request) => (
-              <div key={request._id} className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                    {request.bloodGroup}
-                  </span>
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active
-                  </span>
+          <div className="space-y-8">
+            {Object.entries(groupedRequests).map(([category, categoryRequests]) => {
+              if (categoryRequests.length === 0) return null;
+
+              const categoryLabels = {
+                recent: 'Recent Blood Requests (within 12 hours)',
+                today: "Today's Requests",
+                '1day': '1 Day Ago',
+                '2days': '2 Days Ago',
+                '3days': '3 Days Ago',
+                '4days': '4 Days Ago',
+                '5days': '5 Days Ago',
+                '6days': '6 Days Ago',
+                '7days': '7 Days Ago',
+              };
+
+              return (
+                <div key={category}>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                      {categoryRequests.length}
+                    </span>
+                    {categoryLabels[category]}
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {categoryRequests.map((request) => (
+                      <div key={request._id} className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex items-start justify-between mb-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                            {request.bloodGroup}
+                          </span>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          {request.patientName}
+                        </h3>
+
+                        <div className="space-y-2 text-sm text-gray-600">
+                          <p>
+                            <span className="font-medium">Hospital:</span> {request.hospital}
+                          </p>
+                          <p>
+                            <span className="font-medium">Contact:</span> {request.contactNumber}
+                          </p>
+                          {request.notes && (
+                            <p>
+                              <span className="font-medium">Notes:</span> {request.notes}
+                            </p>
+                          )}
+                          <p>
+                            <span className="font-medium">Posted by:</span> {request.requester?.name || 'Anonymous'}
+                          </p>
+                          <p>
+                            <span className="font-medium">Posted on:</span> {formatDate(request.createdAt)}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => handleSearchDonors(request.bloodGroup, request._id)}
+                          className="mt-4 w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          Find Nearby Donors
+                        </button>
+
+                        {request.requester?._id === user?.id && (
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              onClick={() => navigate(`/update-emergency/${request._id}`)}
+                              className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                              Update Request
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRequest(request._id)}
+                              className="flex-1 bg-red-100 text-red-800 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {request.patientName}
-                </h3>
-
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>
-                    <span className="font-medium">Hospital:</span> {request.hospital}
-                  </p>
-                  <p>
-                    <span className="font-medium">Contact:</span> {request.contactNumber}
-                  </p>
-                  {request.notes && (
-                    <p>
-                      <span className="font-medium">Notes:</span> {request.notes}
-                    </p>
-                  )}
-                  <p>
-                    <span className="font-medium">Posted by:</span> {request.requester?.name || 'Anonymous'}
-                  </p>
-                  <p>
-                    <span className="font-medium">Posted on:</span> {formatDate(request.createdAt)}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => handleSearchDonors(request.bloodGroup, request._id)}
-                  className="mt-4 w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  Find Nearby Donors
-                </button>
-
-                {request.requester?._id === user?.id && (
-                  <button
-                    onClick={() => navigate(`/update-emergency/${request._id}`)}
-                    className="mt-2 w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  >
-                    Update Request
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

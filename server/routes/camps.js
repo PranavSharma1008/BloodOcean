@@ -7,7 +7,7 @@ const {
   updateCamp,
   deleteCamp,
 } = require('../controllers/campController');
-const { protect } = require('../middleware/authMiddleware');
+const protect = require('../middleware/auth');
 
 router.route('/')
   .get(protect, getAllCamps)

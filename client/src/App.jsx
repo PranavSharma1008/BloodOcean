@@ -8,6 +8,7 @@ import CompleteProfile from './pages/CompleteProfile';
 import Location from './pages/Location';
 import Search from './pages/Search';
 import CreateEmergency from './pages/CreateEmergency';
+import UpdateEmergency from './pages/UpdateEmergency';
 import EmergencyRequests from './pages/EmergencyRequests';
 import Camps from './pages/Camps';
 import AdminDashboard from './pages/AdminDashboard';
@@ -59,6 +60,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CreateEmergency />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/update-emergency/:id"
+              element={
+                <ProtectedRoute>
+                  <UpdateEmergency />
                 </ProtectedRoute>
               }
             />

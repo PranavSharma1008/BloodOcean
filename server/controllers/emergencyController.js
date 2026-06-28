@@ -161,11 +161,6 @@ const updateEmergencyRequest = async (req, res) => {
       return res.status(404).json({ message: 'Emergency request not found' });
     }
 
-    // Check if user is the requester
-    if (emergencyRequest.requester.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to update this request' });
-    }
-
     // Validate blood group if provided
     if (bloodGroup) {
       const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -219,11 +214,6 @@ const deleteEmergencyRequest = async (req, res) => {
 
     if (!emergencyRequest) {
       return res.status(404).json({ message: 'Emergency request not found' });
-    }
-
-    // Check if user is the requester
-    if (emergencyRequest.requester.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to delete this request' });
     }
 
     await EmergencyRequest.findByIdAndDelete(req.params.id);

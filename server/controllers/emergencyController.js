@@ -114,7 +114,7 @@ const getEmergencyRequests = async (req, res) => {
 
     // Get active requests sorted by date (newest first)
     const emergencyRequests = await EmergencyRequest.find({ status: 'active' })
-      .populate('requester', 'name email phone')
+      .populate('requester', 'name email phone state district city')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -133,7 +133,7 @@ const getEmergencyRequests = async (req, res) => {
 const getEmergencyRequestById = async (req, res) => {
   try {
     const emergencyRequest = await EmergencyRequest.findById(req.params.id)
-      .populate('requester', 'name email phone');
+      .populate('requester', 'name email phone state district city');
 
     if (!emergencyRequest) {
       return res.status(404).json({ message: 'Emergency request not found' });

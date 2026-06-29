@@ -15,6 +15,7 @@ const Search = () => {
     bloodGroup: '',
     state: '',
     district: '',
+    city: '',
     radius: 10,
     name: '',
   });
@@ -65,7 +66,7 @@ const Search = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'state') {
-      setSearchParams({ ...searchParams, state: value, district: '' });
+      setSearchParams({ ...searchParams, state: value, district: '', city: '' });
       return;
     }
     if (name === 'radius') {
@@ -150,6 +151,7 @@ const Search = () => {
           ...(searchMode === 'manual' && {
             state: params.state,
             district: params.district,
+            city: params.city,
           }),
           ...(searchMode === 'geographic' && {
             radius,
@@ -252,7 +254,7 @@ const Search = () => {
                     className="mr-2 accent-red-600"
                   />
                   <span className="text-sm text-gray-700">
-                    Search by Manual Location (State/District)
+                    Search by Manual Location (State/District/City)
                   </span>
                 </label>
               </div>
@@ -343,6 +345,22 @@ const Search = () => {
                       ))}
                     </select>
                   </div>
+
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                      City / Town (optional)
+                    </label>
+                    <input
+                      type="text"
+                      id="city"
+                      name="city"
+                      value={searchParams.city}
+                      onChange={handleChange}
+                      disabled={!searchParams.district}
+                      placeholder="Enter city or town"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100"
+                    />
+                  </div>
                 </>
               )}
             </div>
@@ -357,12 +375,18 @@ const Search = () => {
                     type="range"
                     id="radius"
                     name="radius"
-                    min={5}
-                    max={20}
-                    step={5}
-                    value={searchParams.radius}
-                    onChange={handleChange}
+                    min={0}
+                    max={2}
+                    step={1}
+                    value={radiusOptions.indexOf(searchParams.radius)}
+                    onChange={(e) => {
+                      const index = parseInt(e.target.value);
+                      setSearchParams({ ...searchParams, radius: radiusOptions[index] });
+                    }}
                     className="w-full accent-red-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${(radiusOptions.indexOf(searchParams.radius) / 2) * 100}%, #e5e7eb ${(radiusOptions.indexOf(searchParams.radius) / 2) * 100}%, #e5e7eb 100%)`
+                    }}
                   />
                   <div className="flex justify-between mt-2 text-xs text-gray-500">
                     {radiusOptions.map((r) => (

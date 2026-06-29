@@ -5,9 +5,17 @@ const Camp = require('../models/Camp');
 // @access  Private
 const getAllCamps = async (req, res) => {
   try {
-    const camps = await Camp.find()
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const camps = await Camp.find({
+      $or: [
+        { endDate: { $gte: today } },
+        { date: { $gte: today }, endDate: { $exists: false } },
+      ],
+    })
       .populate('createdBy', 'name email')
-      .sort({ date: 1, createdAt: -1 });
+      .sort({ startDate: 1, date: 1, createdAt: -1 });
     res.status(200).json(camps);
   } catch (error) {
     res.status(500).json({ message: error.message });

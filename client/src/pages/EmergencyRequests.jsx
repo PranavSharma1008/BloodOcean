@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+import { getStates, getDistricts } from '../data/locations';
 
 const EmergencyRequests = () => {
   const { user, token } = useAuth();
@@ -11,8 +12,16 @@ const EmergencyRequests = () => {
   const [requests, setRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBloodGroup, setFilterBloodGroup] = useState('');
+  const [filterRadius, setFilterRadius] = useState(20);
+  const [searchMode, setSearchMode] = useState('geographic');
+  const [filterState, setFilterState] = useState('');
+  const [filterDistrict, setFilterDistrict] = useState('');
+  const [filterCity, setFilterCity] = useState('');
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  const radiusOptions = [5, 10, 20];
+  const states = getStates();
+  const districts = getDistricts(filterState);
 
   useEffect(() => {
     fetchEmergencyRequests();
@@ -102,6 +111,17 @@ const EmergencyRequests = () => {
     return date.toLocaleString();
   };
 
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   const filteredRequests = requests.filter((request) => {
     const query = searchQuery.toLowerCase().trim();
     const matchesSearch =
@@ -114,7 +134,31 @@ const EmergencyRequests = () => {
     const matchesBloodGroup =
       !filterBloodGroup || request.bloodGroup === filterBloodGroup;
 
-    return matchesSearch && matchesBloodGroup;
+    if (searchMode === 'geographic') {
+      // Filter by distance if user has location and request has location
+      let matchesRadius = true;
+      if (user?.location?.coordinates && user.location.coordinates[0] !== 0 && user.location.coordinates[1] !== 0 && 
+          request.requesterLocation?.coordinates && request.requesterLocation.coordinates[0] !== 0 && request.requesterLocation.coordinates[1] !== 0) {
+        const userLat = user.location.coordinates[1];
+        const userLng = user.location.coordinates[0];
+        const reqLat = request.requesterLocation.coordinates[1];
+        const reqLng = request.requesterLocation.coordinates[0];
+        
+        const distance = calculateDistance(userLat, userLng, reqLat, reqLng);
+        matchesRadius = distance <= filterRadius;
+      }
+      return matchesSearch && matchesBloodGroup && matchesRadius;
+    } else {
+      // Manual mode - filter by state and district
+      const requestState = request.requester?.state;
+      const requestDistrict = request.requester?.district;
+      const requestCity = request.requester?.city;
+      
+      const matchesState = !filterState || requestState === filterState;
+      const matchesDistrict = !filterDistrict || requestDistrict === filterDistrict;
+      const matchesCity = !filterCity || (requestCity && requestCity.toLowerCase().includes(filterCity.toLowerCase().trim()));
+      return matchesSearch && matchesBloodGroup && matchesState && matchesDistrict && matchesCity;
+    }
   });
 
   const groupedRequests = groupRequestsByAge(filteredRequests);
@@ -147,7 +191,35 @@ const EmergencyRequests = () => {
 
         {!loading && requests.length > 0 && (
           <div className="bg-white shadow rounded-lg p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Mode
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="geographic"
+                    checked={searchMode === 'geographic'}
+                    onChange={(e) => setSearchMode(e.target.value)}
+                    className="mr-2"
+                  />
+                  <span>Search by Distance (Nearby)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="manual"
+                    checked={searchMode === 'manual'}
+                    onChange={(e) => setSearchMode(e.target.value)}
+                    className="mr-2"
+                  />
+                  <span>Search by Location (State/District/City)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="searchQuery" className="block text-sm font-medium text-gray-700 mb-2">
                   Search by name, hospital, or contact
@@ -179,6 +251,106 @@ const EmergencyRequests = () => {
                   ))}
                 </select>
               </div>
+              {searchMode === 'geographic' ? (
+                <div>
+                  <label htmlFor="filterRadius" className="block text-sm font-medium text-gray-700 mb-2">
+                    Filter by distance
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      id="filterRadius"
+                      min={0}
+                      max={2}
+                      step={1}
+                      value={radiusOptions.indexOf(filterRadius)}
+                      onChange={(e) => {
+                        const index = parseInt(e.target.value);
+                        setFilterRadius(radiusOptions[index]);
+                      }}
+                      className="w-full accent-red-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${(radiusOptions.indexOf(filterRadius) / 2) * 100}%, #e5e7eb ${(radiusOptions.indexOf(filterRadius) / 2) * 100}%, #e5e7eb 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between mt-2 text-xs text-gray-500">
+                      {radiusOptions.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setFilterRadius(r)}
+                          className={`px-2 py-1 rounded ${
+                            filterRadius === r
+                              ? 'bg-red-100 text-red-700 font-medium'
+                              : 'hover:bg-gray-100'
+                          }`}
+                        >
+                          {r} km
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label htmlFor="filterState" className="block text-sm font-medium text-gray-700 mb-2">
+                      Filter by state
+                    </label>
+                    <select
+                      id="filterState"
+                      value={filterState}
+                      onChange={(e) => {
+                        setFilterState(e.target.value);
+                        setFilterDistrict('');
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">All states</option>
+                      {states.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="filterDistrict" className="block text-sm font-medium text-gray-700 mb-2">
+                      Filter by district
+                    </label>
+                    <select
+                      id="filterDistrict"
+                      value={filterDistrict}
+                      onChange={(e) => setFilterDistrict(e.target.value)}
+                      disabled={!filterState}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100"
+                    >
+                      <option value="">
+                        {filterState ? 'Select district' : 'Select state first'}
+                      </option>
+                      {districts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="filterCity" className="block text-sm font-medium text-gray-700 mb-2">
+                      Filter by city / town
+                    </label>
+                    <input
+                      type="text"
+                      id="filterCity"
+                      value={filterCity}
+                      onChange={(e) => setFilterCity(e.target.value)}
+                      disabled={!filterDistrict}
+                      placeholder="Enter city or town"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

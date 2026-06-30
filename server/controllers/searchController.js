@@ -6,7 +6,7 @@ const { getDistricts } = require('../data/locations');
 // @access  Private
 const searchNearbyDonors = async (req, res) => {
   try {
-    const { bloodGroup, radius, state, district, name, useGps } = req.query;
+    const { bloodGroup, radius, state, district, city, name, useGps } = req.query;
 
     if (!bloodGroup) {
       return res.status(400).json({ message: 'Blood group is required' });
@@ -121,6 +121,10 @@ const searchNearbyDonors = async (req, res) => {
         ],
       };
 
+      if (city && city.trim()) {
+        query.city = { $regex: city.trim(), $options: 'i' };
+      }
+
       if (name && name.trim()) {
         query.name = { $regex: name.trim(), $options: 'i' };
       }
@@ -187,6 +191,7 @@ const searchNearbyDonors = async (req, res) => {
         bloodGroup,
         state,
         district,
+        city: city?.trim() || null,
         name: name?.trim() || null,
       });
     }

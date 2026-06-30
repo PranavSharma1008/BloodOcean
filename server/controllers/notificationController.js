@@ -7,6 +7,7 @@ const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ donorId: req.user.id })
       .populate('requestId', 'patientName bloodGroup hospital status')
+      .populate('campId', 'campName city district state startDate endDate')
       .sort({ createdAt: -1 });
 
     const unreadCount = await Notification.countDocuments({

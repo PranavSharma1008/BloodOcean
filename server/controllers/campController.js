@@ -1,4 +1,38 @@
 const Camp = require('../models/Camp');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
+
+const normalizeDate = (dateValue, endOfDay = false) => {
+  const date = new Date(dateValue);
+  if (endOfDay) {
+    date.setHours(23, 59, 59, 999);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+  return date;
+};
+
+const validateCampDates = (startDate, endDate) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const start = normalizeDate(startDate, false);
+  const end = normalizeDate(endDate, true);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return 'Invalid date format';
+  }
+
+  if (start < today) {
+    return 'Start date cannot be in the past';
+  }
+
+  if (end < start) {
+    return 'End date cannot be earlier than start date';
+  }
+
+  return null;
+};
 
 // @desc    Get all camps
 // @route   GET /api/camps
@@ -27,15 +61,63 @@ const getAllCamps = async (req, res) => {
 // @access  Private
 const createCamp = async (req, res) => {
   try {
+    const { startDate, endDate } = req.body;
+    const validationError = validateCampDates(startDate, endDate);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
+
+    const organizer = await User.findById(req.user.id).select('location');
+    const organizerLocation = organizer?.location?.coordinates && organizer.location.coordinates[0] !== 0 && organizer.location.coordinates[1] !== 0
+      ? organizer.location
+      : null;
+
     const campData = {
       ...req.body,
       createdBy: req.user.id,
+      location: organizerLocation || { type: 'Point', coordinates: [0, 0] },
+      startDate: normalizeDate(req.body.startDate, false),
+      endDate: normalizeDate(req.body.endDate, true),
     };
 
     const camp = await Camp.create(campData);
     const populatedCamp = await Camp.findById(camp._id).populate('createdBy', 'name email');
-    
-    res.status(201).json(populatedCamp);
+
+    let notifiedCount = 0;
+    if (organizerLocation) {
+      const searchRadiusKm = 100;
+      const matchingUsers = await User.find({
+        _id: { $ne: req.user.id },
+        profileCompleted: true,
+        location: {
+          $nearSphere: {
+            $geometry: organizerLocation,
+            $maxDistance: searchRadiusKm * 1000,
+          },
+        },
+      }).select('_id name');
+
+      notifiedCount = matchingUsers.length;
+      const notificationMessage = `New blood donation camp "${camp.campName}" organized near you in ${camp.city || camp.district || camp.state}. Please join if you can.`;
+
+      const notificationPromises = matchingUsers.map((donor) => {
+        return Notification.create({
+          donorId: donor._id,
+          campId: camp._id,
+          type: 'camp',
+          message: notificationMessage,
+          status: 'unread',
+        });
+      });
+      await Promise.all(notificationPromises);
+    }
+
+    const responsePayload = { populatedCamp, notifiedCount };
+    if (!organizerLocation) {
+      responsePayload.warning = 'Camp created, but notifications were not sent because the organizer location is unavailable.';
+    }
+
+    res.status(201).json(responsePayload);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -73,10 +155,23 @@ const updateCamp = async (req, res) => {
     if (camp.createdBy.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to update this camp' });
     }
+
+    const startDate = req.body.startDate || camp.startDate;
+    const endDate = req.body.endDate || camp.endDate;
+    const validationError = validateCampDates(startDate, endDate);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
     
+    const updateData = {
+      ...req.body,
+      startDate: normalizeDate(startDate, false),
+      endDate: normalizeDate(endDate, true),
+    };
+
     const updatedCamp = await Camp.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     ).populate('createdBy', 'name email');
     

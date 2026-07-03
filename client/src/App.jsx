@@ -1,8 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import CompleteProfile from './pages/CompleteProfile';
 import Location from './pages/Location';
@@ -12,93 +15,47 @@ import UpdateEmergency from './pages/UpdateEmergency';
 import EmergencyRequests from './pages/EmergencyRequests';
 import Camps from './pages/Camps';
 import AdminDashboard from './pages/AdminDashboard';
+import MapPage from './pages/MapPage';
+import BloodRequestMap from './pages/BloodRequestMap';
+import PublicProfile from './pages/PublicProfile';
+import CampLocationMap from './pages/CampLocationMap';
+import DonationHistory from './pages/DonationHistory';
+import LiveTracking from './pages/LiveTracking';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/complete-profile"
-              element={
-                <ProtectedRoute>
-                  <CompleteProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/location"
-              element={
-                <ProtectedRoute>
-                  <Location />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/search"
-              element={
-                <ProtectedRoute>
-                  <Search />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/create-emergency"
-              element={
-                <ProtectedRoute>
-                  <CreateEmergency />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/update-emergency/:id"
-              element={
-                <ProtectedRoute>
-                  <UpdateEmergency />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/emergency-requests"
-              element={
-                <ProtectedRoute>
-                  <EmergencyRequests />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/camps"
-              element={
-                <ProtectedRoute>
-                  <Camps />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/" element={<Login />} />
-          </Routes>
-        </div>
-      </Router>
+      <LanguageProvider>
+        <ThemeProvider>
+        <Router>
+          <div className="min-h-screen bg-white dark:bg-slate-900 transition-colors duration-200">
+            <Navbar />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
+              <Route path="/location" element={<ProtectedRoute><Location /></ProtectedRoute>} />
+              <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+              <Route path="/create-emergency" element={<ProtectedRoute><CreateEmergency /></ProtectedRoute>} />
+              <Route path="/update-emergency/:id" element={<ProtectedRoute><UpdateEmergency /></ProtectedRoute>} />
+              <Route path="/emergency-requests" element={<ProtectedRoute><EmergencyRequests /></ProtectedRoute>} />
+              <Route path="/camps" element={<ProtectedRoute><Camps /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
+              <Route path="/blood-request/:id" element={<ProtectedRoute><BloodRequestMap /></ProtectedRoute>} />
+              <Route path="/tracking/:requestId" element={<ProtectedRoute><LiveTracking /></ProtectedRoute>} />
+              <Route path="/user/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
+              <Route path="/camp/:id/location" element={<ProtectedRoute><CampLocationMap /></ProtectedRoute>} />
+              <Route path="/donation-history" element={<ProtectedRoute><DonationHistory /></ProtectedRoute>} />
+              <Route path="/" element={<Login />} />
+            </Routes>
+          </div>
+        </Router>
+        </ThemeProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

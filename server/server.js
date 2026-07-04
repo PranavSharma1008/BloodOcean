@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const http = require('http');
+const { initializeSocket } = require('./sockets/tracking');
 
 // Load environment variables
 dotenv.config();
@@ -16,30 +18,50 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+// Allow both Vite dev server (5173) and legacy dev server (3000) by default
+const defaultOrigins = ['http://localhost:5173', 'http://localhost:3000'];
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : defaultOrigins,
   credentials: true,
 };
 app.use(cors(corsOptions));
 
 // Body parser middleware
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/profile', require('./routes/profile'));
-app.use('/api/users', require('./routes/location'));
+app.use('/api/location', require('./routes/location'));
 app.use('/api/donors', require('./routes/search'));
 app.use('/api/emergency', require('./routes/emergency'));
 app.use('/api/notifications', require('./routes/notification'));
+app.use('/api/blood-requests', require('./routes/bloodRequests'));
 app.use('/api/camps', require('./routes/camps'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/donations', require('./routes/donations'));
 
 // Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'Blood Donation Finder API' });
 });
+
+// Debug route: list active tracking sessions (development only)
+try {
+  const trackingUtils = require('./utils/trackingSocket');
+  app.get('/api/debug/tracking-sessions', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(403).json({ message: 'Disabled in production' });
+    try {
+      const sessions = trackingUtils.listTrackingSessions();
+      res.json({ success: true, sessions });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+} catch (err) {
+  // ignore if module not available
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -78,7 +100,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+initializeSocket(server);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

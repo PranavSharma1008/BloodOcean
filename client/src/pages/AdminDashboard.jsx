@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslatedState } from '../data/locations';
 
 const AdminDashboard = () => {
   const { user, token } = useAuth();
+  const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = useState('statistics');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statistics, setStatistics] = useState(null);
   const [users, setUsers] = useState([]);
   const [emergencyRequests, setEmergencyRequests] = useState([]);
+  const [bloodRequests, setBloodRequests] = useState([]);
+  const [donations, setDonations] = useState([]);
+  const [camps, setCamps] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     if (user?.role !== 'admin') {
-      setError('Access denied. Admin only.');
+      setError(t('Access denied. Admin only.'));
       setLoading(false);
       return;
     }
@@ -28,7 +36,7 @@ const AdminDashboard = () => {
       setStatistics(response.data.statistics);
       setLoading(false);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch statistics');
+      setError(error.response?.data?.message || t('Failed to fetch statistics'));
       setLoading(false);
     }
   };
@@ -40,7 +48,7 @@ const AdminDashboard = () => {
       });
       setUsers(response.data.users);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch users');
+      setError(error.response?.data?.message || t('Failed to fetch users'));
     }
   };
 
@@ -51,12 +59,56 @@ const AdminDashboard = () => {
       });
       setEmergencyRequests(response.data.requests);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch emergency requests');
+      setError(error.response?.data?.message || t('Failed to fetch emergency requests'));
+    }
+  };
+
+  const fetchBloodRequests = async () => {
+    try {
+      const response = await api.get('/api/admin/blood-requests', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBloodRequests(response.data.requests);
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to fetch blood requests'));
+    }
+  };
+
+  const fetchDonations = async () => {
+    try {
+      const response = await api.get('/api/admin/donations', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDonations(response.data.donations);
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to fetch donations'));
+    }
+  };
+
+  const fetchCamps = async () => {
+    try {
+      const response = await api.get('/api/admin/camps', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCamps(response.data.camps);
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to fetch camps'));
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get('/api/admin/notifications', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications(response.data.notifications);
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to fetch notifications'));
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    if (!window.confirm(t('Are you sure you want to delete this user?'))) return;
 
     try {
       await api.delete(`/api/admin/users/${userId}`, {
@@ -65,12 +117,12 @@ const AdminDashboard = () => {
       fetchUsers();
       fetchStatistics();
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to delete user');
+      setError(error.response?.data?.message || t('Failed to delete user'));
     }
   };
 
   const handleDeleteEmergencyRequest = async (requestId) => {
-    if (!window.confirm('Are you sure you want to delete this emergency request?')) return;
+    if (!window.confirm(t('Are you sure you want to delete this emergency request?'))) return;
 
     try {
       await api.delete(`/api/admin/emergency-requests/${requestId}`, {
@@ -79,7 +131,60 @@ const AdminDashboard = () => {
       fetchEmergencyRequests();
       fetchStatistics();
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to delete emergency request');
+      setError(error.response?.data?.message || t('Failed to delete emergency request'));
+    }
+  };
+
+  const handleDeleteBloodRequest = async (requestId) => {
+    if (!window.confirm(t('Are you sure you want to delete this blood request?'))) return;
+
+    try {
+      await api.delete(`/api/admin/blood-requests/${requestId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchBloodRequests();
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to delete blood request'));
+    }
+  };
+
+  const handleDeleteDonation = async (donationId) => {
+    if (!window.confirm(t('Are you sure you want to delete this donation?'))) return;
+
+    try {
+      await api.delete(`/api/admin/donations/${donationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchDonations();
+      fetchStatistics();
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to delete donation'));
+    }
+  };
+
+  const handleDeleteCamp = async (campId) => {
+    if (!window.confirm(t('Are you sure you want to delete this camp?'))) return;
+
+    try {
+      await api.delete(`/api/admin/camps/${campId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchCamps();
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to delete camp'));
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    if (!window.confirm(t('Are you sure you want to delete this notification?'))) return;
+
+    try {
+      await api.delete(`/api/admin/notifications/${notificationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchNotifications();
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to delete notification'));
     }
   };
 
@@ -88,6 +193,10 @@ const AdminDashboard = () => {
     setError('');
     if (tab === 'users') fetchUsers();
     if (tab === 'requests') fetchEmergencyRequests();
+    if (tab === 'blood-requests') fetchBloodRequests();
+    if (tab === 'donations') fetchDonations();
+    if (tab === 'camps') fetchCamps();
+    if (tab === 'notifications') fetchNotifications();
   };
 
   const formatDate = (dateString) => {
@@ -100,7 +209,7 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block w-12 h-12 rounded-full border-4 border-gray-200 border-t-red-600 animate-spin" />
-          <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
+          <p className="mt-4 text-gray-600 font-medium">{t('Loading dashboard...')}</p>
         </div>
       </div>
     );
@@ -127,8 +236,8 @@ const AdminDashboard = () => {
             </svg>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 font-display">Admin Dashboard</h1>
-            <p className="text-gray-500 mt-1">Manage users, emergency requests, and view statistics</p>
+            <h1 className="text-3xl font-bold text-gray-900 font-display">{t('Admin Dashboard')}</h1>
+            <p className="text-gray-500 mt-1">{t('Manage users, emergency requests, blood requests, donations, camps, notifications, and view statistics')}</p>
           </div>
         </div>
 
@@ -145,9 +254,13 @@ const AdminDashboard = () => {
         <div className="card mb-8 overflow-hidden">
           <nav className="flex px-2 py-2 gap-1" aria-label="Tabs">
             {[
-              { id: 'statistics', label: 'Statistics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-              { id: 'users', label: 'Users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
-              { id: 'requests', label: 'Emergency Requests', icon: 'M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+              { id: 'statistics', label: t('Statistics'), icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+              { id: 'users', label: t('Users'), icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z' },
+              { id: 'requests', label: t('Emergency'), icon: 'M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+              { id: 'blood-requests', label: t('Blood Requests'), icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+              { id: 'donations', label: t('Donations'), icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
+              { id: 'camps', label: t('Camps'), icon: 'M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11M8 14v.01M12 14v.01M16 14v.01M8 18v.01M12 18v.01M16 18v.01' },
+              { id: 'notifications', label: t('Notifications'), icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
             ].map((tab) => (
               <button key={tab.id} onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
@@ -175,25 +288,25 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 font-display">Donor Statistics</h2>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('Donor Statistics')}</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200/50">
-                  <p className="text-sm font-semibold text-blue-700">Total Donors</p>
+                  <p className="text-sm font-semibold text-blue-700">{t('Total Donors')}</p>
                   <p className="text-4xl font-bold text-blue-900 font-display mt-1">{statistics.donors.total}</p>
                 </div>
                 <div className="p-6 rounded-2xl bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-200/50">
-                  <p className="text-sm font-semibold text-green-700">Available Donors</p>
+                  <p className="text-sm font-semibold text-green-700">{t('Available Donors')}</p>
                   <p className="text-4xl font-bold text-green-900 font-display mt-1">{statistics.donors.available}</p>
                 </div>
               </div>
               <div className="mt-8">
-                <h3 className="text-lg font-bold text-gray-900 font-display mb-4">Blood Group Distribution</h3>
+                <h3 className="text-lg font-bold text-gray-900 font-display mb-4">{t('Blood Group Distribution')}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {statistics.donors.bloodGroupDistribution.map((bg) => (
                     <div key={bg._id} className="p-5 rounded-2xl bg-gradient-to-br from-red-50 to-red-100/50 border-2 border-red-200/50 text-center hover:shadow-md transition-shadow">
                       <p className="text-3xl font-bold text-red-600 font-display">{bg._id}</p>
-                      <p className="text-sm font-medium text-gray-600 mt-1">{bg.count} donor{bg.count !== 1 ? 's' : ''}</p>
+                      <p className="text-sm font-medium text-gray-600 mt-1">{bg.count} {bg.count !== 1 ? t('donors') : t('donor')}</p>
                     </div>
                   ))}
                 </div>
@@ -208,23 +321,23 @@ const AdminDashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 font-display">Emergency Request Statistics</h2>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('Emergency Request Statistics')}</h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 border-2 border-purple-200/50">
-                  <p className="text-sm font-semibold text-purple-700">Total</p>
+                  <p className="text-sm font-semibold text-purple-700">{t('Total')}</p>
                   <p className="text-3xl font-bold text-purple-900 font-display mt-1">{statistics.emergencyRequests.total}</p>
                 </div>
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-yellow-50 to-yellow-100/50 border-2 border-yellow-200/50">
-                  <p className="text-sm font-semibold text-yellow-700">Active</p>
+                  <p className="text-sm font-semibold text-yellow-700">{t('Active')}</p>
                   <p className="text-3xl font-bold text-yellow-900 font-display mt-1">{statistics.emergencyRequests.active}</p>
                 </div>
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-200/50">
-                  <p className="text-sm font-semibold text-green-700">Fulfilled</p>
+                  <p className="text-sm font-semibold text-green-700">{t('Fulfilled')}</p>
                   <p className="text-3xl font-bold text-green-900 font-display mt-1">{statistics.emergencyRequests.fulfilled}</p>
                 </div>
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-red-50 to-red-100/50 border-2 border-red-200/50">
-                  <p className="text-sm font-semibold text-red-700">Cancelled</p>
+                  <p className="text-sm font-semibold text-red-700">{t('Cancelled')}</p>
                   <p className="text-3xl font-bold text-red-900 font-display mt-1">{statistics.emergencyRequests.cancelled}</p>
                 </div>
               </div>
@@ -237,15 +350,15 @@ const AdminDashboard = () => {
           <div className="card overflow-hidden">
             <div className="px-8 py-5 border-b-2 border-gray-100 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 font-display">User Management</h2>
-                <p className="text-sm text-gray-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''} registered</p>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('User Management')}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{users.length} {users.length !== 1 ? t('users') : t('user')} registered</p>
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y-2 divide-gray-100">
                 <thead>
                   <tr className="bg-gray-50/50">
-                    {['Name', 'Email', 'Blood Group', 'Role', 'Status', 'Actions'].map((h) => (
+                    {[t('Name'), t('Email'), t('Blood Group'), t('Role'), t('Status'), t('Actions')].map((h) => (
                       <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
@@ -253,11 +366,13 @@ const AdminDashboard = () => {
                 <tbody className="divide-y divide-gray-100">
                   {users.map((userItem) => (
                     <tr key={userItem._id} className="hover:bg-red-50/30 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{userItem.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        <Link to={`/user/${userItem._id}`} className="text-red-600 hover:underline">{userItem.name}</Link>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{userItem.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700">
-                          {userItem.bloodGroup || 'N/A'}
+                          {userItem.bloodGroup || t('N/A')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -272,14 +387,14 @@ const AdminDashboard = () => {
                           userItem.available ? 'text-green-600' : 'text-red-600'
                         }`}>
                           <span className={`w-2 h-2 rounded-full ${userItem.available ? 'bg-green-500' : 'bg-red-500'}`} />
-                          {userItem.available ? 'Available' : 'Unavailable'}
+                          {userItem.available ? t('Available') : t('Unavailable')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {userItem._id !== user?.id && (
                           <button onClick={() => handleDeleteUser(userItem._id)}
                             className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">
-                            Delete
+                            {t('Delete')}
                           </button>
                         )}
                       </td>
@@ -295,14 +410,14 @@ const AdminDashboard = () => {
         {activeTab === 'requests' && (
           <div className="card overflow-hidden">
             <div className="px-8 py-5 border-b-2 border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 font-display">Emergency Request Management</h2>
-              <p className="text-sm text-gray-500 mt-0.5">{emergencyRequests.length} request{emergencyRequests.length !== 1 ? 's' : ''}</p>
+              <h2 className="text-xl font-bold text-gray-900 font-display">{t('Emergency Request Management')}</h2>
+              <p className="text-sm text-gray-500 mt-0.5">{emergencyRequests.length} {emergencyRequests.length !== 1 ? t('requests') : t('request')}</p>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y-2 divide-gray-100">
                 <thead>
                   <tr className="bg-gray-50/50">
-                    {['Patient', 'Blood Group', 'Hospital', 'Status', 'Created', 'Actions'].map((h) => (
+                    {[t('Patient'), t('Blood Group'), t('Hospital'), t('Status'), t('Created'), t('Actions')].map((h) => (
                       <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
@@ -330,7 +445,205 @@ const AdminDashboard = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button onClick={() => handleDeleteEmergencyRequest(request._id)}
                           className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">
-                          Delete
+                          {t('Delete')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Blood Requests Tab */}
+        {activeTab === 'blood-requests' && (
+          <div className="card overflow-hidden">
+            <div className="px-8 py-5 border-b-2 border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('Blood Request Management')}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{bloodRequests.length} {bloodRequests.length !== 1 ? t('requests') : t('request')}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y-2 divide-gray-100">
+                <thead>
+                  <tr className="bg-gray-50/50">
+                    {[t('Requester'), t('Donor'), t('Blood Group'), t('Hospital'), t('Status'), t('Created'), t('Actions')].map((h) => (
+                      <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {bloodRequests.map((req) => (
+                    <tr key={req._id} className="hover:bg-red-50/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        <Link to={`/user/${req.requester?._id}`} className="text-red-600 hover:underline">{req.requester?.name || t('Unknown')}</Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        <Link to={`/user/${req.donor?._id}`} className="text-red-600 hover:underline">{req.donor?.name || t('Unknown')}</Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700">
+                          {req.bloodGroup}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{req.hospital}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          req.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          req.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                          req.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                          req.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {req.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(req.createdAt)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button onClick={() => handleDeleteBloodRequest(req._id)}
+                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">
+                          {t('Delete')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Donations Tab */}
+        {activeTab === 'donations' && (
+          <div className="card overflow-hidden">
+            <div className="px-8 py-5 border-b-2 border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('Donation Management')}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{donations.length} {donations.length !== 1 ? t('donations') : t('donation')}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y-2 divide-gray-100">
+                <thead>
+                  <tr className="bg-gray-50/50">
+                    {[t('Donor'), t('Blood Group'), t('Hospital'), t('Units'), t('Date'), t('Actions')].map((h) => (
+                      <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {donations.map((donation) => (
+                    <tr key={donation._id} className="hover:bg-red-50/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        <Link to={`/user/${donation.donor?._id}`} className="text-red-600 hover:underline">{donation.donor?.name || t('Unknown')}</Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700">
+                          {donation.bloodGroup}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{donation.hospital}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{donation.units}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(donation.donationDate)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button onClick={() => handleDeleteDonation(donation._id)}
+                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">
+                          {t('Delete')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Camps Tab */}
+        {activeTab === 'camps' && (
+          <div className="card overflow-hidden">
+            <div className="px-8 py-5 border-b-2 border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('Camp Management')}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{camps.length} {camps.length !== 1 ? t('camps') : t('camp')}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y-2 divide-gray-100">
+                <thead>
+                  <tr className="bg-gray-50/50">
+                    {[t('Camp Name'), t('Organizer'), t('City'), t('State'), t('Start Date'), t('End Date'), t('Actions')].map((h) => (
+                      <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {camps.map((camp) => (
+                    <tr key={camp._id} className="hover:bg-red-50/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{camp.campName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{camp.organizerName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{camp.city || t('-')}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{getTranslatedState(camp.state, lang)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(camp.startDate)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(camp.endDate)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button onClick={() => handleDeleteCamp(camp._id)}
+                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">
+                          {t('Delete')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+          <div className="card overflow-hidden">
+            <div className="px-8 py-5 border-b-2 border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('Notification Management')}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{notifications.length} {notifications.length !== 1 ? t('notifications') : t('notification')}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y-2 divide-gray-100">
+                <thead>
+                  <tr className="bg-gray-50/50">
+                    {[t('User'), t('Type'), t('Message'), t('Status'), t('Created'), t('Actions')].map((h) => (
+                      <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {notifications.map((notif) => (
+                    <tr key={notif._id} className="hover:bg-red-50/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        <Link to={`/user/${notif.donorId?._id}`} className="text-red-600 hover:underline">{notif.donorId?.name || t('Unknown')}</Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-700">
+                          {notif.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{notif.message}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          notif.status === 'unread' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                          {notif.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(notif.createdAt)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button onClick={() => handleDeleteNotification(notif._id)}
+                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">
+                          {t('Delete')}
                         </button>
                       </td>
                     </tr>

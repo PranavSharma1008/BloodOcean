@@ -1,23 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
+import { useNavigate, Link } from 'react-router-dom';
+import TypingText from '../components/TypingText';
+import TextScrollMarquee from '../components/TextScrollMarquee';
+import MagicLoader from '../components/MagicLoader';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [showCityWarning, setShowCityWarning] = useState(false);
   const [showProfileCheck, setShowProfileCheck] = useState(false);
+  const intervalRef = useRef(null);
+
+  const showProfileCheckNotification = () => {
+    const lastDismissed = localStorage.getItem('profileCheckLastDismissed');
+    const fifteenMins = 15 * 60 * 1000;
+    if (!lastDismissed || Date.now() - parseInt(lastDismissed) > fifteenMins) {
+      setShowProfileCheck(true);
+    }
+  };
 
   useEffect(() => {
     if (user?.profileCompleted && !user?.city) {
       setShowCityWarning(true);
     }
-    const timer = setTimeout(() => setShowProfileCheck(true), 500);
-    return () => clearTimeout(timer);
+    showProfileCheckNotification();
+
+    intervalRef.current = setInterval(() => {
+      showProfileCheckNotification();
+    }, 60000);
+
+    return () => clearInterval(intervalRef.current);
   }, [user]);
 
   const dismissProfileCheck = () => {
     setShowProfileCheck(false);
+    localStorage.setItem('profileCheckLastDismissed', Date.now().toString());
   };
 
   return (
@@ -33,18 +53,12 @@ const Dashboard = () => {
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900">City/Town Missing</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('City/Town Missing')}</h3>
             </div>
-            <p className="text-gray-600 mb-6">
-              Please add your city/town to your profile to help donors find you more easily.
-            </p>
+            <p className="text-gray-600 mb-6">{t('Please add your city/town to your profile to help donors find you more easily.')}</p>
             <div className="flex gap-3">
-              <button onClick={() => navigate('/complete-profile')} className="btn-primary flex-1 text-sm py-3">
-                Add City/Town
-              </button>
-              <button onClick={() => setShowCityWarning(false)} className="btn-secondary flex-1 text-sm py-3">
-                Later
-              </button>
+              <button onClick={() => navigate('/complete-profile')} className="btn-primary flex-1 text-sm py-3">{t('Add City/Town')}</button>
+              <button onClick={() => setShowCityWarning(false)} className="btn-secondary flex-1 text-sm py-3">{t('Later')}</button>
             </div>
           </div>
         </div>
@@ -59,21 +73,29 @@ const Dashboard = () => {
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Profile Check</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('Profile Check')}</h3>
             </div>
-            <p className="text-gray-600 mb-2">
-              Please review your profile to ensure all information is correct — blood group, location, and contact details.
-            </p>
-            <p className="text-sm text-gray-500 mb-6">
-              Keeping your profile up to date helps donors and requesters reach you in emergencies.
-            </p>
+            <p className="text-gray-600 mb-2">{t('Please review your profile to ensure all information is correct — blood group, location, and contact details.')}</p>
+            <p className="text-sm text-gray-500 mb-6">{t('Keeping your profile up to date helps donors and requesters reach you in emergencies.')}</p>
             <div className="flex gap-3">
-              <button onClick={() => { navigate('/complete-profile'); dismissProfileCheck(); }} className="btn-primary flex-1 text-sm py-3">
-                Review Profile
-              </button>
-              <button onClick={dismissProfileCheck} className="btn-secondary flex-1 text-sm py-3">
-                Got it
-              </button>
+              <button onClick={() => { navigate('/complete-profile'); dismissProfileCheck(); }} className="btn-primary flex-1 text-sm py-3">{t('Review Profile')}</button>
+              <button onClick={dismissProfileCheck} className="btn-secondary flex-1 text-sm py-3">{t('Got it')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {user?.disease && user.disease.trim() !== '' && (
+        <div className="max-w-7xl mx-auto px-4 pt-6 sm:px-6 lg:px-8 relative">
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 flex items-center gap-4 animate-slide-up">
+            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 20 20" stroke="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-red-700">{t("Sorry, we don't accept the disease blood for donation.")}</p>
+              <p className="text-xs text-red-600 mt-0.5">{t('Your profile has been marked with a medical condition.')}</p>
             </div>
           </div>
         </div>
@@ -87,18 +109,31 @@ const Dashboard = () => {
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-red-400/10 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3" />
           <div className="relative">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center animate-pulse">
                 <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white font-display">
-                Welcome, {user?.name?.split(' ')[0] || 'Hero'}!
-              </h1>
+              <TypingText
+                as="h1"
+                fontSize="text-3xl sm:text-4xl lg:text-5xl"
+                fontWeight="font-extrabold"
+                color="text-white"
+                letterSpacing="tracking-normal font-display"
+                duration={1.5}
+              >
+                {t('Welcome,')} {user?.name ? user.name.split(' ')[0] : 'Hero'}!
+              </TypingText>
             </div>
-            <p className="text-red-100 text-lg max-w-2xl leading-relaxed">
-              Your blood donation hub — manage your profile, find nearby donors, and respond to urgent requests.
-            </p>
+            <div className="animate-fade-in" style={{animationDelay: '0.6s'}}>
+              <TextScrollMarquee
+                baseVelocity={15}
+                delay={1.5}
+                className="text-red-100/80 text-lg font-medium"
+              >
+                {t('Your blood donation hub — manage your profile, find nearby donors, and respond to urgent requests.')}
+              </TextScrollMarquee>
+            </div>
           </div>
         </div>
 
@@ -112,13 +147,9 @@ const Dashboard = () => {
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-yellow-800">
-                  Please complete your donor profile to help others find you.
-                </p>
+                <p className="text-sm font-medium text-yellow-800">{t('Please complete your donor profile to help others find you.')}</p>
               </div>
-              <button onClick={() => navigate('/complete-profile')} className="btn-primary text-sm py-2 px-4 whitespace-nowrap">
-                Complete Profile
-              </button>
+              <button onClick={() => navigate('/complete-profile')} className="btn-primary text-sm py-2 px-4 whitespace-nowrap">{t('Complete Profile')}</button>
             </div>
           </div>
         )}
@@ -132,13 +163,9 @@ const Dashboard = () => {
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-800">
-                  Set your location to help others find nearby blood donors.
-                </p>
+                <p className="text-sm font-medium text-blue-800">{t('Set your location to help others find nearby blood donors.')}</p>
               </div>
-              <button onClick={() => navigate('/location')} className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-all text-sm font-semibold whitespace-nowrap">
-                Set Location
-              </button>
+              <button onClick={() => navigate('/location')} className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-all text-sm font-semibold whitespace-nowrap">{t('Set Location')}</button>
             </div>
           </div>
         )}
@@ -153,50 +180,78 @@ const Dashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 font-display">My Profile</h2>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('My Profile')}</h2>
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Name</span>
-                  <span className="text-sm font-semibold text-gray-900">{user?.name}</span>
+                  <span className="text-sm text-gray-500">{t('Name')}</span>
+                  <Link to={`/user/${user._id}`} className="text-sm font-semibold text-gray-900 hover:underline">{user?.name}</Link>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Email</span>
+                  <span className="text-sm text-gray-500">{t('Email')}</span>
                   <span className="text-sm font-semibold text-gray-900">{user?.email}</span>
                 </div>
                 {user?.profileCompleted && (
                   <>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-500">Phone</span>
+                      <span className="text-sm text-gray-500">{t('Phone')}</span>
                       <span className="text-sm font-semibold text-gray-900">{user?.phone}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-500">Blood Group</span>
+                      <span className="text-sm text-gray-500">{t('Blood Group')}</span>
                       <span className="badge-red text-sm">{user?.bloodGroup}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-500">Location</span>
+                      <span className="text-sm text-gray-500">{t('Location')}</span>
                       <span className="text-sm font-semibold text-gray-900">{user?.city || 'Not set'}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-sm text-gray-500">Availability</span>
+                      <span className="text-sm text-gray-500">{t('Availability')}</span>
                       <span className={`badge ${user?.available ? 'badge-green' : 'badge-gray'}`}>
-                        {user?.available ? 'Available' : 'Not Available'}
+                        {user?.available ? t('Available') : t('Not Available')}
+                      </span>
+                    </div>
+                    {user?.age && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-500">{t('Age')}</span>
+                        <span className="text-sm font-semibold text-gray-900">{user.age}{t(' years')}</span>
+                      </div>
+                    )}
+                    {user?.gender && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-500">{t('Gender')}</span>
+                        <span className="text-sm font-semibold text-gray-900 capitalize">{user.gender}</span>
+                      </div>
+                    )}
+                    {user?.religion && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-500">{t('Religion')}</span>
+                        <span className="text-sm font-semibold text-gray-900">{user.religion}</span>
+                      </div>
+                    )}
+                    {user?.unitsCanDonate && (
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-sm text-gray-500">{t('Units Can Donate')}</span>
+                        <span className="text-sm font-semibold text-gray-900">{user.unitsCanDonate}{t(' unit(s)')}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                      <span className="text-sm text-gray-500">{t('Blood Charges')}</span>
+                      <span className={`badge ${user?.bloodCharges ? 'badge-yellow' : 'badge-green'}`}>
+                        {user?.bloodCharges ? `${user.bloodCharges} ${t('per unit')}` : t('Free')}
                       </span>
                     </div>
                   </>
                 )}
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-gray-500">Role</span>
-                  <span className="text-sm font-semibold text-gray-900 capitalize">{user?.role}</span>
+                  <span className="text-sm text-gray-500">{t('Role')}</span>
+                  <span className="text-sm font-semibold text-gray-900 capitalize">{user?.role === 'user' ? t('user') : user?.role}</span>
                 </div>
               </div>
 
               {user?.profileCompleted && (
-                <button onClick={() => navigate('/complete-profile')} className="btn-secondary w-full mt-6 text-sm">
-                  Edit Profile
-                </button>
+                <button onClick={() => navigate('/complete-profile')} className="btn-secondary w-full mt-6 text-sm">{t('Edit Profile')}</button>
               )}
             </div>
           </div>
@@ -210,7 +265,7 @@ const Dashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 font-display">Quick Actions</h2>
+                <h2 className="text-xl font-bold text-gray-900 font-display">{t('Quick Actions')}</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -221,8 +276,8 @@ const Dashboard = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-gray-900 mb-1">Search Donors</h3>
-                    <p className="text-sm text-gray-600">Find nearby blood donors based on your location.</p>
+                    <h3 className="font-bold text-gray-900 mb-1">{t('Search Donors')}</h3>
+                    <p className="text-sm text-gray-600">{t('Find nearby blood donors based on your location.')}</p>
                   </div>
                 </button>
 
@@ -233,8 +288,8 @@ const Dashboard = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-gray-900 mb-1">Emergency Request</h3>
-                    <p className="text-sm text-gray-600">Post an urgent blood donation request.</p>
+                    <h3 className="font-bold text-gray-900 mb-1">{t('Emergency Request')}</h3>
+                    <p className="text-sm text-gray-600">{t('Post an urgent blood donation request.')}</p>
                   </div>
                 </button>
 
@@ -245,8 +300,8 @@ const Dashboard = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-gray-900 mb-1">View Requests</h3>
-                    <p className="text-sm text-gray-600">Manage your emergency blood requests.</p>
+                    <h3 className="font-bold text-gray-900 mb-1">{t('View Requests')}</h3>
+                    <p className="text-sm text-gray-600">{t('Manage your emergency blood requests.')}</p>
                   </div>
                 </button>
 
@@ -258,8 +313,8 @@ const Dashboard = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-gray-900 mb-1">Update Location</h3>
-                    <p className="text-sm text-gray-600">Update your GPS coordinates for matching.</p>
+                    <h3 className="font-bold text-gray-900 mb-1">{t('Update Location')}</h3>
+                    <p className="text-sm text-gray-600">{t('Update your GPS coordinates for matching.')}</p>
                   </div>
                 </button>
 
@@ -271,8 +326,8 @@ const Dashboard = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                       </div>
-                      <h3 className="font-bold text-gray-900 mb-1">Admin Dashboard</h3>
-                      <p className="text-sm text-gray-600">Manage users, emergency requests, and view statistics.</p>
+                      <h3 className="font-bold text-gray-900 mb-1">{t('Admin Dashboard')}</h3>
+                      <p className="text-sm text-gray-600">{t('Manage users, emergency requests, and view statistics.')}</p>
                     </div>
                   </button>
                 )}

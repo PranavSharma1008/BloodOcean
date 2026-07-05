@@ -61,10 +61,15 @@ const getAllCamps = async (req, res) => {
 // @access  Private
 const createCamp = async (req, res) => {
   try {
-    const { startDate, endDate } = req.body;
+    const { startDate, endDate, contactNumber, contactNumber: rawPhone } = req.body;
     const validationError = validateCampDates(startDate, endDate);
     if (validationError) {
       return res.status(400).json({ message: validationError });
+    }
+
+    const phoneDigits = (contactNumber || rawPhone || '').replace(/\D/g, '');
+    if (!/^\d{10}$/.test(phoneDigits)) {
+      return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
     }
 
     const organizer = await User.findById(req.user.id).select('location');
@@ -85,6 +90,7 @@ const createCamp = async (req, res) => {
 
     let notifiedCount = 0;
     if (organizerLocation) {
+      const io = require('../sockets/tracking').getIO();
       const searchRadiusKm = 100;
       const matchingUsers = await User.find({
         _id: { $ne: req.user.id },
@@ -100,14 +106,30 @@ const createCamp = async (req, res) => {
       notifiedCount = matchingUsers.length;
       const notificationMessage = `New blood donation camp "${camp.campName}" organized near you in ${camp.city || camp.district || camp.state}. Please join if you can.`;
 
-      const notificationPromises = matchingUsers.map((donor) => {
-        return Notification.create({
+      // create notifications and emit real-time socket events for online users
+      const notificationPromises = matchingUsers.map(async (donor) => {
+        const n = await Notification.create({
           donorId: donor._id,
           campId: camp._id,
           type: 'camp',
           message: notificationMessage,
           status: 'unread',
         });
+        try {
+          if (io) {
+            io.to(`user:${donor._id}`).emit('new_notification', {
+              notificationId: n._id,
+              type: 'camp',
+              message: notificationMessage,
+              campId: camp._id,
+              createdAt: n.createdAt,
+            });
+          }
+        } catch (emitErr) {
+          // ignore socket emit errors
+          console.log('[camp] emit error:', emitErr.message);
+        }
+        return n;
       });
       await Promise.all(notificationPromises);
     }
@@ -168,6 +190,13 @@ const updateCamp = async (req, res) => {
       startDate: normalizeDate(startDate, false),
       endDate: normalizeDate(endDate, true),
     };
+
+    if (updateData.contactNumber) {
+      const phoneDigits = updateData.contactNumber.replace(/\D/g, '');
+      if (!/^\d{10}$/.test(phoneDigits)) {
+        return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
+      }
+    }
 
     const updatedCamp = await Camp.findByIdAndUpdate(
       req.params.id,

@@ -1,35 +1,38 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-
-const BADGES = [
-  { level: 'Bronze', min: 1, icon: '🥉', color: 'from-amber-600 to-amber-800', bg: 'bg-amber-100 text-amber-800' },
-  { level: 'Silver', min: 5, icon: '🥈', color: 'from-slate-400 to-slate-600', bg: 'bg-slate-100 text-slate-800' },
-  { level: 'Gold', min: 10, icon: '🥇', color: 'from-yellow-500 to-yellow-700', bg: 'bg-yellow-100 text-yellow-800' },
-  { level: 'Platinum', min: 25, icon: '💎', color: 'from-cyan-400 to-cyan-600', bg: 'bg-cyan-100 text-cyan-800' },
-  { level: 'Diamond', min: 50, icon: '🔮', color: 'from-violet-500 to-violet-700', bg: 'bg-violet-100 text-violet-800' },
-];
-
-const getBadge = (count) => {
-  for (const b of BADGES) {
-    if (count >= b.min) return b;
-  }
-  return null;
-};
+import { useLanguage } from '../context/LanguageContext';
 
 const MAX_DAYS_AGO = 15;
 
 const today = new Date().toISOString().split('T')[0];
-const minDate = new Date(Date.now() - MAX_DAYS_AGO * 86400000).toISOString().split('T')[0];
 
 const DonationHistory = () => {
   const { user, token } = useAuth();
+  const { t } = useLanguage();
+
+  const BADGES = [
+    { level: t('Bronze'), min: 1, icon: '🥉', color: 'from-amber-600 to-amber-800', bg: 'bg-amber-100 text-amber-800' },
+    { level: t('Silver'), min: 5, icon: '🥈', color: 'from-slate-400 to-slate-600', bg: 'bg-slate-100 text-slate-800' },
+    { level: t('Gold'), min: 10, icon: '🥇', color: 'from-yellow-500 to-yellow-700', bg: 'bg-yellow-100 text-yellow-800' },
+    { level: t('Platinum'), min: 25, icon: '💎', color: 'from-cyan-400 to-cyan-600', bg: 'bg-cyan-100 text-cyan-800' },
+    { level: t('Diamond'), min: 50, icon: '🔮', color: 'from-violet-500 to-violet-700', bg: 'bg-violet-100 text-violet-800' },
+  ];
+
+  const getBadge = (count) => {
+    for (const b of BADGES) {
+      if (count >= b.min) return b;
+    }
+    return null;
+  };
+
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ recipientName: user?.name || '', bloodGroup: '', hospital: '', units: 1, donationDate: today, notes: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, recipientName: user?.name || '' }));
@@ -49,18 +52,29 @@ const DonationHistory = () => {
     setLoading(false);
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm(t('Are you sure you want to delete this donation record?'))) return;
+    setDeletingId(id);
+    try {
+      await api.delete(`/api/donations/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDonations((prev) => prev.filter((d) => d._id !== id));
+      setSuccess(t('Donation deleted successfully'));
+    } catch (err) {
+      setError(err.response?.data?.message || t('Failed to delete donation'));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (form.donationDate < minDate) {
-      setError(`Donation date can only be within the last ${MAX_DAYS_AGO} days`);
-      return;
-    }
-
     if (form.donationDate > today) {
-      setError('Donation date cannot be in the future');
+      setError(t('Donation date cannot be in the future'));
       return;
     }
 
@@ -68,12 +82,12 @@ const DonationHistory = () => {
       await api.post('/api/donations', form, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSuccess('Donation recorded!');
+      setSuccess(t('Donation recorded!'));
       setShowForm(false);
-      setForm({ recipientName: '', bloodGroup: '', hospital: '', units: 1, donationDate: '', notes: '' });
+      setForm({ recipientName: user?.name || '', bloodGroup: '', hospital: '', units: 1, donationDate: today, notes: '' });
       fetchDonations();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to record donation');
+      setError(err.response?.data?.message || t('Failed to record donation'));
     }
   };
 
@@ -92,8 +106,8 @@ const DonationHistory = () => {
             </svg>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 font-display">Donation History</h1>
-            <p className="text-gray-500 mt-1">Track your life-saving contributions</p>
+            <h1 className="text-3xl font-bold text-gray-900 font-display">{t('Donation History')}</h1>
+            <p className="text-gray-500 mt-1">{t('Track your life-saving contributions')}</p>
           </div>
         </div>
 
@@ -105,13 +119,13 @@ const DonationHistory = () => {
                 {badge.icon}
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Current Badge</p>
-                <p className="text-2xl font-extrabold text-gray-900 font-display mt-0.5">{badge.level} Donor</p>
-                <p className="text-gray-500 mt-1">{donations.length} donation{donations.length !== 1 ? 's' : ''} · {totalUnits} unit{totalUnits !== 1 ? 's' : ''} donated</p>
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">{t('Current Badge')}</p>
+                <p className="text-2xl font-extrabold text-gray-900 font-display mt-0.5">{badge.level} {t('Donor')}</p>
+                <p className="text-gray-500 mt-1">{donations.length} {donations.length !== 1 ? t('donations') : t('donation')} · {totalUnits} {totalUnits !== 1 ? t('units') : t('unit')} donated</p>
               </div>
               {nextBadge && (
                 <div className="text-right">
-                  <p className="text-xs text-gray-400 font-medium">{nextBadge.min - donations.length} more to {nextBadge.level}</p>
+                  <p className="text-xs text-gray-400 font-medium">{nextBadge.min - donations.length} {t('more to')} {nextBadge.level}</p>
                   <div className="mt-1.5 w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all" style={{ width: `${Math.min(100, (donations.length / nextBadge.min) * 100)}%` }} />
                   </div>
@@ -129,13 +143,13 @@ const DonationHistory = () => {
           <>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900 font-display">
-                {donations.length > 0 ? `${donations.length} Recorded Donation${donations.length !== 1 ? 's' : ''}` : 'No donations yet'}
+                {donations.length > 0 ? `${donations.length} ${donations.length !== 1 ? t('Recorded Donations') : t('Recorded Donation')}` : t('No donations yet')}
               </h2>
               <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2 text-sm">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                {showForm ? 'Cancel' : 'Record Donation'}
+                {showForm ? t('Cancel') : t('Record Donation')}
               </button>
             </div>
 
@@ -144,46 +158,46 @@ const DonationHistory = () => {
 
             {showForm && (
               <div className="card p-8 mb-8 animate-fade-in">
-                <h3 className="text-lg font-bold text-gray-900 font-display mb-6">Record a Donation</h3>
+                <h3 className="text-lg font-bold text-gray-900 font-display mb-6">{t('Record a Donation')}</h3>
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid md:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Recipient Name *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Recipient Name *')}</label>
                       <input type="text" className="input-field" required value={form.recipientName}
                         onChange={(e) => setForm({ ...form, recipientName: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Blood Group *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Blood Group *')}</label>
                       <select className="select-field" required value={form.bloodGroup}
                         onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}>
-                        <option value="">Select</option>
+                        <option value="">{t('Select')}</option>
                         {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
                           <option key={bg} value={bg}>{bg}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Hospital *</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Hospital *')}</label>
                       <input type="text" className="input-field" required value={form.hospital}
                         onChange={(e) => setForm({ ...form, hospital: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Units</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Units')}</label>
                       <input type="number" min="1" className="input-field" value={form.units}
                         onChange={(e) => setForm({ ...form, units: parseInt(e.target.value) || 1 })} />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Donation Date *</label>
-                      <input type="date" className="input-field" required min={minDate} max={today} value={form.donationDate}
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Donation Date *')}</label>
+                      <input type="date" className="input-field" required max={today} value={form.donationDate}
                         onChange={(e) => setForm({ ...form, donationDate: e.target.value })} />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
-                      <input type="text" className="input-field" placeholder="Optional" value={form.notes}
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Notes')}</label>
+                      <input type="text" className="input-field" placeholder={t('Optional')} value={form.notes}
                         onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                     </div>
                   </div>
-                  <button type="submit" className="btn-primary w-full">Record Donation</button>
+                  <button type="submit" className="btn-primary w-full">{t('Record Donation')}</button>
                 </form>
               </div>
             )}
@@ -193,8 +207,8 @@ const DonationHistory = () => {
                 <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 className="text-lg font-bold text-gray-900">No donations recorded yet</h3>
-                <p className="text-gray-500 mt-1">Start tracking your life-saving contributions!</p>
+                <h3 className="text-lg font-bold text-gray-900">{t('No donations recorded yet')}</h3>
+                <p className="text-gray-500 mt-1">{t('Start tracking your life-saving contributions!')}</p>
               </div>
             )}
 
@@ -210,11 +224,18 @@ const DonationHistory = () => {
                     <div className="flex items-center gap-3">
                       <span className="px-2.5 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-bold">{d.bloodGroup}</span>
                       <span className="text-sm text-gray-500">{d.units} unit{d.units > 1 ? 's' : ''}</span>
-                      {d.hospital && <span className="text-sm text-gray-500">at {d.hospital}</span>}
+                      {d.hospital && <span className="text-sm text-gray-500">{t(' at ')}{d.hospital}</span>}
                     </div>
-                    {d.recipientName && <p className="text-sm text-gray-600 mt-1">Recipient: {d.recipientName}</p>}
+                    {d.recipientName && <p className="text-sm text-gray-600 mt-1">{t('Recipient: ')}{d.recipientName}</p>}
                     <p className="text-xs text-gray-400 mt-1">{new Date(d.donationDate).toLocaleDateString()}</p>
                   </div>
+                  <button
+                    onClick={() => handleDelete(d._id)}
+                    disabled={deletingId === d._id}
+                    className="px-3 py-2 rounded-xl border-2 border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold transition-all disabled:opacity-50"
+                  >
+                    {deletingId === d._id ? t('Deleting...') : t('Remove')}
+                  </button>
                 </div>
               ))}
             </div>

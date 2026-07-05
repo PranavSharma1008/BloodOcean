@@ -123,11 +123,34 @@ const forgotPassword = async (req, res) => {
 
     const message = `Your password reset code is: ${otp}\n\nThis code will expire in 15 minutes.`;
 
-    const sendResult = await sendEmail({
-      to: user.email,
-      subject: 'Password Reset Code',
-      text: message,
-    });
+    try {
+      const sendResult = await sendEmail({
+        to: user.email,
+        subject: 'Password Reset Code',
+        text: message,
+      });
+
+      if (sendResult?.skipped) {
+        return res.status(500).json({
+          success: false,
+          message: 'Email service is not configured on the server. Please contact support.',
+        });
+      }
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError.message);
+
+      // Remove stored token so it's not left dangling
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send reset code. The email service credentials may be incorrect. '
+          + 'For Gmail, ensure you are using a 16-character App Password (not your regular password). '
+          + 'Contact support for assistance.',
+      });
+    }
 
     res.status(200).json({
       success: true,

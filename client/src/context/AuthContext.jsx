@@ -115,10 +115,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateAvatar = async (avatar) => {
+    try {
+      const response = await api.put('/api/profile/avatar', { avatar }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(response.data.user);
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to update avatar',
+      };
+    }
+  };
+
+  const removeAvatar = async () => {
+    try {
+      const response = await api.delete('/api/profile/avatar', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(response.data.user);
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to remove avatar',
+      };
+    }
+  };
+
   const updateLocation = async (latitude, longitude) => {
     try {
       const response = await api.put(
-        '/api/users/location',
+        '/api/location',
         { latitude, longitude },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -186,8 +216,78 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const createBloodRequest = async (donorId, requestData) => {
+    try {
+      const response = await api.post('/api/blood-requests', { donorId, ...requestData }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to send blood request',
+      };
+    }
+  };
+
+  const getMyBloodRequests = async () => {
+    try {
+      const response = await api.get('/api/blood-requests', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch blood requests',
+      };
+    }
+  };
+
+  const acceptBloodRequest = async (requestId, latitude, longitude) => {
+    try {
+      const response = await api.put(`/api/blood-requests/${requestId}/accept`, { latitude, longitude }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to accept blood request',
+      };
+    }
+  };
+
+  const declineBloodRequest = async (requestId) => {
+    try {
+      const response = await api.put(`/api/blood-requests/${requestId}/decline`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to decline blood request',
+      };
+    }
+  };
+
+  const completeBloodRequest = async (requestId) => {
+    try {
+      const response = await api.put(`/api/blood-requests/${requestId}/complete`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to complete blood request',
+      };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, token, login, register, logout, getProfile, refreshUser, updateProfile, updateLocation, getNotifications, markNotificationAsRead, markAllNotificationsAsRead }}>
+    <AuthContext.Provider value={{ user, loading, token, login, register, logout, getProfile, refreshUser, updateProfile, updateAvatar, removeAvatar, updateLocation, getNotifications, markNotificationAsRead, markAllNotificationsAsRead, createBloodRequest, getMyBloodRequests, acceptBloodRequest, declineBloodRequest, completeBloodRequest }}>
       {children}
     </AuthContext.Provider>
   );

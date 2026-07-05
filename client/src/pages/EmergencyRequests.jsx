@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { getStates, getDistricts } from '../data/locations';
+import { getStates, getDistricts, getTranslatedState, getTranslatedDistrict } from '../data/locations';
+import { ExpandableSearchBar } from '@/components/lightswind/expandable-search-bar';
+import { io } from 'socket.io-client';
+import { useLanguage } from '../context/LanguageContext';
+
+const SOCKET_URL = import.meta.env.VITE_API_URL || '';
 
 const EmergencyRequests = () => {
   const { user, token } = useAuth();
+  const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,26 +22,61 @@ const EmergencyRequests = () => {
   const [searchMode, setSearchMode] = useState('geographic');
   const [filterState, setFilterState] = useState('');
   const [filterDistrict, setFilterDistrict] = useState('');
-  const [filterCity, setFilterCity] = useState('');
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const radiusOptions = [5, 10, 20];
   const states = getStates();
   const districts = getDistricts(filterState);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetchEmergencyRequests();
   }, []);
+
+  useEffect(() => {
+    if (!token || !user) return;
+    const socket = io(SOCKET_URL, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+    });
+    socketRef.current = socket;
+
+    socket.on('responder_status_changed', (data) => {
+      setRequests((prev) =>
+        prev.map((req) =>
+          req._id === data.requestId
+            ? { ...req, userResponse: data.status }
+            : req
+        )
+      );
+    });
+
+    socket.on('request_completed', (data) => {
+      setRequests((prev) => prev.filter((req) => req._id !== data.requestId));
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [token, user]);
 
   const fetchEmergencyRequests = async () => {
     try {
       const response = await api.get('/api/emergency', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setRequests(response.data.emergencyRequests);
+      const currentUserId = user?.id || user?._id;
+      const requests = (response.data.emergencyRequests || []).map((req) => {
+        const myResponse = (req.responders || []).find(
+          (r) => String(r.donor?._id || r.donor) === String(currentUserId)
+        );
+        return { ...req, userResponse: myResponse?.status || undefined };
+      });
+      setRequests(requests);
       setLoading(false);
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to fetch emergency requests');
+      setError(error.response?.data?.message || t('Failed to fetch emergency requests'));
       setLoading(false);
     }
   };
@@ -44,8 +85,34 @@ const EmergencyRequests = () => {
     navigate('/search', { state: { bloodGroup, requestId } });
   };
 
+  const [responding, setResponding] = useState({});
+
+  const handleRespond = async (requestId, status) => {
+    try {
+      setResponding((prev) => ({ ...prev, [requestId]: status }));
+      await api.post(`/api/emergency/${requestId}/respond`, { status }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (status === 'declined') {
+        setRequests((prev) => prev.filter((req) => req._id !== requestId));
+      } else {
+        const userStatus = status === 'accepted' ? 'pending' : status;
+        setRequests((prev) =>
+          prev.map((req) =>
+            req._id === requestId
+              ? { ...req, userResponse: userStatus }
+              : req
+          )
+        );
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || t('Failed to respond'));
+      setResponding((prev) => ({ ...prev, [requestId]: undefined }));
+    }
+  };
+
   const handleDeleteRequest = async (requestId) => {
-    if (!window.confirm('Are you sure you want to delete this request?')) {
+    if (!window.confirm(t('Are you sure you want to delete this request?'))) {
       return;
     }
 
@@ -55,7 +122,7 @@ const EmergencyRequests = () => {
       });
       setRequests(requests.filter(req => req._id !== requestId));
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to delete request');
+      setError(error.response?.data?.message || t('Failed to delete request'));
     }
   };
 
@@ -65,23 +132,23 @@ const EmergencyRequests = () => {
     const diffInHours = (now - created) / (1000 * 60 * 60);
 
     if (diffInHours < 12) {
-      return { label: 'Recent', category: 'recent' };
+      return { label: t('Recent'), category: 'recent' };
     } else if (diffInHours < 24) {
-      return { label: 'Today', category: 'today' };
+      return { label: t('Today'), category: 'today' };
     } else if (diffInHours < 48) {
-      return { label: '1 day ago', category: '1day' };
+      return { label: t('1 day ago'), category: '1day' };
     } else if (diffInHours < 72) {
-      return { label: '2 days ago', category: '2days' };
+      return { label: t('2 days ago'), category: '2days' };
     } else if (diffInHours < 96) {
-      return { label: '3 days ago', category: '3days' };
+      return { label: t('3 days ago'), category: '3days' };
     } else if (diffInHours < 120) {
-      return { label: '4 days ago', category: '4days' };
+      return { label: t('4 days ago'), category: '4days' };
     } else if (diffInHours < 144) {
-      return { label: '5 days ago', category: '5days' };
+      return { label: t('5 days ago'), category: '5days' };
     } else if (diffInHours < 168) {
-      return { label: '6 days ago', category: '6days' };
+      return { label: t('6 days ago'), category: '6days' };
     } else {
-      return { label: '7 days ago', category: '7days' };
+      return { label: t('7 days ago'), category: '7days' };
     }
   };
 
@@ -109,6 +176,18 @@ const EmergencyRequests = () => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString();
+  };
+
+  const getTimeRemaining = (expiresAt) => {
+    if (!expiresAt) return null;
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diff = expiry - now;
+    if (diff <= 0) return { label: t('Expired'), urgent: false, expired: true };
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return { label: `${hours}h ${minutes}m ${t('left')}`, urgent: hours < 6, expired: false };
+    return { label: `${minutes}m ${t('left')}`, urgent: true, expired: false };
   };
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -152,202 +231,109 @@ const EmergencyRequests = () => {
       // Manual mode - filter by state and district
       const requestState = request.requester?.state;
       const requestDistrict = request.requester?.district;
-      const requestCity = request.requester?.city;
       
       const matchesState = !filterState || requestState === filterState;
       const matchesDistrict = !filterDistrict || requestDistrict === filterDistrict;
-      const matchesCity = !filterCity || (requestCity && requestCity.toLowerCase().includes(filterCity.toLowerCase().trim()));
-      return matchesSearch && matchesBloodGroup && matchesState && matchesDistrict && matchesCity;
+      return matchesSearch && matchesBloodGroup && matchesState && matchesDistrict;
     }
   });
 
   const groupedRequests = groupRequestsByAge(filteredRequests);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Emergency Blood Requests
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Active emergency blood donation requests in your area
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-8 sm:py-12 px-4 sm:px-8 lg:px-12 relative">
+      <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
+      <div className="max-w-7xl mx-auto relative">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/20">
+              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 font-display">{t('Emergency Requests')}</h1>
+                <p className="text-gray-500 mt-1">{t('Active emergency blood donation requests')}</p>
+            </div>
           </div>
-          <button
-            onClick={() => navigate('/create-emergency')}
-            className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-          >
-            Create Request
+          <button onClick={() => navigate('/create-emergency')}
+            className="btn-primary flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            {t('New Request')}
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
-          </div>
+          <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3.5 rounded-xl text-sm font-medium flex items-center gap-2 mb-6">{error}</div>
         )}
 
         {!loading && requests.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-4 mb-6">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Mode
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="geographic"
-                    checked={searchMode === 'geographic'}
-                    onChange={(e) => setSearchMode(e.target.value)}
-                    className="mr-2"
-                  />
-                  <span>Search by Distance (Nearby)</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="manual"
-                    checked={searchMode === 'manual'}
-                    onChange={(e) => setSearchMode(e.target.value)}
-                    className="mr-2"
-                  />
-                  <span>Search by Location (State/District/City)</span>
-                </label>
+          <div className="card p-6 mb-8">
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">{t('Filter Mode')}</label>
+              <div className="flex flex-wrap gap-3">
+                {['geographic', 'manual'].map((mode) => (
+                  <label key={mode} className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    searchMode === mode ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}>
+                    <input type="radio" value={mode} checked={searchMode === mode}
+                      onChange={(e) => setSearchMode(e.target.value)} className="accent-red-600" />
+                    <span className="text-sm font-medium text-gray-700">
+                      {mode === 'geographic' ? t('Nearby (Distance)') : t('By Location (State/District)')}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
-                <label htmlFor="searchQuery" className="block text-sm font-medium text-gray-700 mb-2">
-                  Search by name, hospital, or contact
-                </label>
-                <input
-                  type="text"
-                  id="searchQuery"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="e.g. Ram, Hospital, 9317290976"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
+                <label htmlFor="searchQuery" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Search')}</label>
+                <ExpandableSearchBar id="searchQuery" name="searchQuery" value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('Name, hospital, or contact')}
+                  expandedWidth="28rem" className="w-full" />
               </div>
               <div>
-                <label htmlFor="filterBloodGroup" className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter by blood group
-                </label>
-                <select
-                  id="filterBloodGroup"
-                  value={filterBloodGroup}
-                  onChange={(e) => setFilterBloodGroup(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">All blood groups</option>
+                <label htmlFor="filterBloodGroup" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Blood Group')}</label>
+                <select id="filterBloodGroup" value={filterBloodGroup} onChange={(e) => setFilterBloodGroup(e.target.value)}
+                  className="select-field">
+                  <option value="">{t('All blood groups')}</option>
                   {bloodGroups.map((group) => (
-                    <option key={group} value={group}>
-                      {group}
-                    </option>
+                    <option key={group} value={group}>{group}</option>
                   ))}
                 </select>
               </div>
               {searchMode === 'geographic' ? (
                 <div>
-                  <label htmlFor="filterRadius" className="block text-sm font-medium text-gray-700 mb-2">
-                    Filter by distance
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="range"
-                      id="filterRadius"
-                      min={0}
-                      max={2}
-                      step={1}
-                      value={radiusOptions.indexOf(filterRadius)}
-                      onChange={(e) => {
-                        const index = parseInt(e.target.value);
-                        setFilterRadius(radiusOptions[index]);
-                      }}
-                      className="w-full accent-red-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${(radiusOptions.indexOf(filterRadius) / 2) * 100}%, #e5e7eb ${(radiusOptions.indexOf(filterRadius) / 2) * 100}%, #e5e7eb 100%)`
-                      }}
-                    />
-                    <div className="flex justify-between mt-2 text-xs text-gray-500">
-                      {radiusOptions.map((r) => (
-                        <button
-                          key={r}
-                          type="button"
-                          onClick={() => setFilterRadius(r)}
-                          className={`px-2 py-1 rounded ${
-                            filterRadius === r
-                              ? 'bg-red-100 text-red-700 font-medium'
-                              : 'hover:bg-gray-100'
-                          }`}
-                        >
-                          {r} km
-                        </button>
-                      ))}
-                    </div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('Distance')}</label>
+                  <div className="flex gap-2">
+                    {radiusOptions.map((r) => (
+                      <button key={r} type="button" onClick={() => setFilterRadius(r)}
+                        className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                          filterRadius === r ? 'bg-red-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}>{r} {t('km')}</button>
+                    ))}
                   </div>
                 </div>
               ) : (
                 <>
                   <div>
-                    <label htmlFor="filterState" className="block text-sm font-medium text-gray-700 mb-2">
-                      Filter by state
-                    </label>
-                    <select
-                      id="filterState"
-                      value={filterState}
-                      onChange={(e) => {
-                        setFilterState(e.target.value);
-                        setFilterDistrict('');
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    >
-                      <option value="">All states</option>
-                      {states.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
-                      ))}
+                    <label htmlFor="filterState" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('State')}</label>
+                    <select id="filterState" value={filterState} onChange={(e) => { setFilterState(e.target.value); setFilterDistrict(''); }}
+                      className="select-field">
+                       <option value="">{t('All states')}</option>
+                      {states.map((state) => (<option key={state} value={state}>{getTranslatedState(state, lang)}</option>))}
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="filterDistrict" className="block text-sm font-medium text-gray-700 mb-2">
-                      Filter by district
-                    </label>
-                    <select
-                      id="filterDistrict"
-                      value={filterDistrict}
-                      onChange={(e) => setFilterDistrict(e.target.value)}
-                      disabled={!filterState}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100"
-                    >
-                      <option value="">
-                        {filterState ? 'Select district' : 'Select state first'}
-                      </option>
-                      {districts.map((district) => (
-                        <option key={district} value={district}>
-                          {district}
-                        </option>
-                      ))}
+                    <label htmlFor="filterDistrict" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('District')}</label>
+                    <select id="filterDistrict" value={filterDistrict} onChange={(e) => setFilterDistrict(e.target.value)}
+                      disabled={!filterState} className="select-field disabled:bg-gray-100">
+                      <option value="">{filterState ? t('Select district') : t('Select state first')}</option>
+                      {districts.map((district) => (<option key={district} value={district}>{getTranslatedDistrict(district, lang)}</option>))}
                     </select>
-                  </div>
-                  <div>
-                    <label htmlFor="filterCity" className="block text-sm font-medium text-gray-700 mb-2">
-                      Filter by city / town
-                    </label>
-                    <input
-                      type="text"
-                      id="filterCity"
-                      value={filterCity}
-                      onChange={(e) => setFilterCity(e.target.value)}
-                      disabled={!filterDistrict}
-                      placeholder="Enter city or town"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100"
-                    />
                   </div>
                 </>
               )}
@@ -356,114 +342,140 @@ const EmergencyRequests = () => {
         )}
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-            <p className="mt-2 text-gray-600">Loading emergency requests...</p>
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-red-200 border-t-red-600"></div>
+            <p className="mt-4 text-gray-500 font-medium">{t('Loading emergency requests...')}</p>
           </div>
         ) : filteredRequests.length === 0 ? (
-          <div className="bg-white shadow rounded-lg p-12 text-center">
-            <h3 className="text-sm font-medium text-gray-900">
-              {requests.length === 0
-                ? 'No active emergency requests'
-                : 'No requests match your search'}
+          <div className="card p-16 text-center">
+            <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {requests.length === 0 ? t('No active emergency requests') : t('No requests match your search')}
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {requests.length === 0
-                ? 'Be the first to post an emergency blood donation request'
-                : 'Try a different search term or blood group filter'}
+            <p className="text-gray-500 mt-1">
+              {requests.length === 0 ? t('Be the first to post an emergency request') : t('Try different filters')}
             </p>
             {requests.length === 0 && (
-              <button
-                onClick={() => navigate('/create-emergency')}
-                className="mt-4 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                Create Emergency Request
-              </button>
+              <button onClick={() => navigate('/create-emergency')} className="btn-primary mt-6">{t('Create Emergency Request')}</button>
             )}
           </div>
         ) : (
           <div className="space-y-8">
             {Object.entries(groupedRequests).map(([category, categoryRequests]) => {
               if (categoryRequests.length === 0) return null;
-
               const categoryLabels = {
-                recent: 'Recent Blood Requests (within 12 hours)',
-                today: "Today's Requests",
-                '1day': '1 Day Ago',
-                '2days': '2 Days Ago',
-                '3days': '3 Days Ago',
-                '4days': '4 Days Ago',
-                '5days': '5 Days Ago',
-                '6days': '6 Days Ago',
-                '7days': '7 Days Ago',
+                recent: t('Recent (within 12 hours)'), today: t("Today's"), '1day': t('1 Day Ago'), '2days': t('2 Days Ago'),
+                '3days': t('3 Days Ago'), '4days': t('4 Days Ago'), '5days': t('5 Days Ago'), '6days': t('6 Days Ago'), '7days': t('7 Days Ago'),
               };
-
               return (
-                <div key={category}>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                      {categoryRequests.length}
-                    </span>
+                <div key={category} className="animate-fade-in">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="badge-red">{categoryRequests.length}</span>
                     {categoryLabels[category]}
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {categoryRequests.map((request) => (
-                      <div key={request._id} className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow">
+                      <article key={request._id} className="card p-6 hover:shadow-xl transition-all duration-300">
                         <div className="flex items-start justify-between mb-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                            {request.bloodGroup}
-                          </span>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Active
-                          </span>
+                          <span className="badge-red text-base font-bold px-4 py-1.5">{request.bloodGroup}</span>
+                          <span className="badge-green text-xs"><span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1 animate-pulse" />{t('Active')}</span>
                         </div>
-
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          {request.patientName}
-                        </h3>
-
-                        <div className="space-y-2 text-sm text-gray-600">
-                          <p>
-                            <span className="font-medium">Hospital:</span> {request.hospital}
-                          </p>
-                          <p>
-                            <span className="font-medium">Contact:</span> {request.contactNumber}
-                          </p>
-                          {request.notes && (
-                            <p>
-                              <span className="font-medium">Notes:</span> {request.notes}
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">{request.patientName}</h3>
+                        <div className="space-y-2 text-sm text-gray-600 mb-5">
+                          <p className="flex items-center gap-2"><svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                            <span className="font-medium text-gray-700">{t('Hospital:')}</span> {request.hospital}</p>
+                          <p className="flex items-center gap-2"><svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                            <span className="font-medium text-gray-700">{t('Contact:')}</span> {request.contactNumber}</p>
+                          {request.unitsNeeded && (
+                            <p className="flex items-center gap-2">
+                              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                              <span className="font-medium text-gray-700">{t('Units:')}</span>
+                              {request.unitsFulfilled || 0}/{request.unitsNeeded} {t('needed')}
                             </p>
                           )}
-                          <p>
-                            <span className="font-medium">Posted by:</span> {request.requester?.name || 'Anonymous'}
-                          </p>
-                          <p>
-                            <span className="font-medium">Posted on:</span> {formatDate(request.createdAt)}
-                          </p>
+                          {request.notes && <p className="italic text-gray-500">"{request.notes}"</p>}
+                          <p className="text-xs text-gray-400">{t('Posted by')} {request.requester?._id ? (
+                            <Link to={`/user/${request.requester._id}`} className="text-red-600 hover:underline font-medium">
+                              {request.requester.name}
+                            </Link>
+                          ) : (
+                            <span>{request.requester?.name || t('Anonymous')}</span>
+                          )} on {formatDate(request.createdAt)}</p>
+                          {(() => {
+                            const remaining = getTimeRemaining(request.expiresAt);
+                            if (!remaining) return null;
+                            return (
+                              <p className={`text-xs font-semibold mt-1 ${remaining.expired ? 'text-red-500' : remaining.urgent ? 'text-orange-500' : 'text-gray-400'}`}>
+                                {remaining.expired ? `⏰ ${remaining.label}` : remaining.urgent ? `⏰ ${remaining.label}` : remaining.label}
+                              </p>
+                            );
+                          })()}
                         </div>
-
-                        <button
-                          onClick={() => handleSearchDonors(request.bloodGroup, request._id)}
-                          className="mt-4 w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                        >
-                          Find Nearby Donors
-                        </button>
-
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            onClick={() => navigate(`/update-emergency/${request._id}`)}
-                            className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                          >
-                            Update Request
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRequest(request._id)}
-                            className="flex-1 bg-red-100 text-red-800 py-2 px-4 rounded-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
+                        {request.requester?._id === user?.id || request.requester === user?.id ? (
+                          <>
+                            <button onClick={() => handleSearchDonors(request.bloodGroup, request._id)}
+                              className="btn-primary w-full text-sm mb-3">{t('Find Nearby Donors')}</button>
+                            <div className="flex gap-2">
+                              {request.responders?.some(r => r.status === 'accepted') ? (
+                                null
+                              ) : (
+                                <button onClick={() => navigate(`/update-emergency/${request._id}`)}
+                                  className="btn-secondary flex-1 text-sm py-2.5">{t('Update')}</button>
+                              )}
+                              <button onClick={() => handleDeleteRequest(request._id)}
+                                className="btn-secondary flex-1 text-sm py-2.5 text-red-600 border-red-200 hover:bg-red-50">{t('Delete')}</button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            {(() => {
+                              const remaining = (request.unitsNeeded || 1) - (request.unitsFulfilled || 0);
+                              const myUnits = user?.unitsCanDonate || 1;
+                              const lowUnits = myUnits < remaining;
+                              return (
+                                <>
+                                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                    <span>{t('Your units:')} {myUnits}</span>
+                                    <span>{t('Need:')} {remaining}</span>
+                                    {user?.bloodCharges > 0 ? (
+                                      <span className="text-amber-600 font-semibold">₹{user.bloodCharges}/{t('unit')}</span>
+                                    ) : (
+                                      <span className="text-green-600 font-semibold">{t('Free')}</span>
+                                    )}
+                                  </div>
+                                  {lowUnits && (
+                                    <p className="text-xs text-amber-600 font-medium text-center">
+                                      {t('You have only')} {myUnits} {t('unit(s). The request needs')} {remaining}.
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            })()}
+                            {request.userResponse === 'accepted' ? (
+                              <span className="flex-1 text-center py-2.5 rounded-xl bg-green-100 text-green-700 text-sm font-bold">{t('Accepted ✓')}</span>
+                            ) : request.userResponse === 'pending' ? (
+                              <span className="flex-1 text-center py-2.5 rounded-xl bg-yellow-100 text-yellow-700 text-sm font-bold">{t('Pending Approval')}</span>
+                            ) : request.userResponse === 'declined' ? (
+                              <span className="flex-1 text-center py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-bold">{t('Declined')}</span>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button onClick={() => handleRespond(request._id, 'accepted')}
+                                  disabled={responding[request._id]}
+                                  className="btn-primary flex-1 text-sm py-2.5 disabled:opacity-50">
+                                  {responding[request._id] === 'accepted' ? t('Responding...') : t('I Can Help')}
+                                </button>
+                                <button onClick={() => handleRespond(request._id, 'declined')}
+                                  disabled={responding[request._id]}
+                                  className="btn-secondary flex-1 text-sm py-2.5 disabled:opacity-50">
+                                  {responding[request._id] === 'declined' ? t('Hiding...') : t("I Can't Help")}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </article>
                     ))}
                   </div>
                 </div>

@@ -26,6 +26,17 @@ const emergencyRequestSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  unitsNeeded: {
+    type: Number,
+    required: [true, 'Please provide units needed'],
+    min: 1,
+    default: 1,
+  },
+  unitsFulfilled: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   requesterLocation: {
     type: {
       type: String,
@@ -42,10 +53,34 @@ const emergencyRequestSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  responders: [{
+    donor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'declined'],
+      default: 'pending',
+    },
+    respondedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    units: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+  }],
   status: {
     type: String,
     enum: ['active', 'fulfilled', 'cancelled'],
     default: 'active',
+  },
+  expiresAt: {
+    type: Date,
+    default: () => new Date(+new Date() + 24 * 60 * 60 * 1000),
   },
   createdAt: {
     type: Date,

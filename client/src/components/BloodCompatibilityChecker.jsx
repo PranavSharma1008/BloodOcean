@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -14,6 +15,7 @@ const COMPATIBILITY = {
 };
 
 const BloodCompatibilityChecker = () => {
+  const { t } = useLanguage();
   const [selected, setSelected] = useState(null);
 
   return (
@@ -24,10 +26,10 @@ const BloodCompatibilityChecker = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 font-display">Blood Compatibility Checker</h2>
+        <h2 className="text-xl font-bold text-gray-900 font-display">{t('Blood Compatibility Checker')}</h2>
       </div>
 
-      <p className="text-gray-600 mb-6">Select your blood group to see who you can donate to and receive from.</p>
+      <p className="text-gray-600 mb-6">{t('Select your blood group to see who you can donate to and receive from.')}</p>
 
       <div className="flex flex-wrap gap-2 mb-8">
         {BLOOD_GROUPS.map((bg) => (
@@ -49,7 +51,7 @@ const BloodCompatibilityChecker = () => {
               <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-              <h3 className="font-bold text-green-800">Can Donate To</h3>
+              <h3 className="font-bold text-green-800">{t('Can Donate To')}</h3>
             </div>
             <div className="flex flex-wrap gap-2">
               {COMPATIBILITY[selected].canDonateTo.map((bg) => (
@@ -63,7 +65,7 @@ const BloodCompatibilityChecker = () => {
               <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
               </svg>
-              <h3 className="font-bold text-blue-800">Can Receive From</h3>
+              <h3 className="font-bold text-blue-800">{t('Can Receive From')}</h3>
             </div>
             <div className="flex flex-wrap gap-2">
               {COMPATIBILITY[selected].canReceiveFrom.map((bg) => (
@@ -75,14 +77,14 @@ const BloodCompatibilityChecker = () => {
       )}
 
       <details className="mt-6">
-        <summary className="text-sm font-semibold text-red-600 cursor-pointer hover:text-red-700">Full compatibility table</summary>
+        <summary className="text-sm font-semibold text-red-600 cursor-pointer hover:text-red-700">{t('Full compatibility table')}</summary>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th className="p-2 border border-gray-200 bg-gray-50 text-gray-700 font-bold">Blood Type</th>
-                <th className="p-2 border border-gray-200 bg-green-50 text-green-800 font-bold">Can Donate To</th>
-                <th className="p-2 border border-gray-200 bg-blue-50 text-blue-800 font-bold">Can Receive From</th>
+                <th className="p-2 border border-gray-200 bg-gray-50 text-gray-700 font-bold">{t('Blood Type')}</th>
+                <th className="p-2 border border-gray-200 bg-green-50 text-green-800 font-bold">{t('Can Donate To')}</th>
+                <th className="p-2 border border-gray-200 bg-blue-50 text-blue-800 font-bold">{t('Can Receive From')}</th>
               </tr>
             </thead>
             <tbody>
@@ -100,8 +102,8 @@ const BloodCompatibilityChecker = () => {
 
       <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200">
         <p className="text-xs text-amber-800 font-medium">
-          <strong>Universal Donor:</strong> O- can donate to everyone.{' '}
-          <strong>Universal Recipient:</strong> AB+ can receive from everyone.
+          <strong>{t('Universal Donor:')}</strong> {t('O- can donate to everyone.')}{' '}
+          <strong>{t('Universal Recipient:')}</strong> {t('AB+ can receive from everyone.')}
         </p>
       </div>
     </div>

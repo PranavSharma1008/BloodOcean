@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { getStates, getDistricts } from '../data/locations';
+import { getStates, getDistricts, getTranslatedState, getTranslatedDistrict } from '../data/locations';
+import { useLanguage } from '../context/LanguageContext';
 
 const Camps = () => {
   const { user, token } = useAuth();
@@ -18,8 +20,8 @@ const Camps = () => {
     district: '',
     city: '',
     address: '',
-    startDate: '',
-    endDate: '',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
     startTime: '',
     endTime: '',
     contactNumber: '',
@@ -28,6 +30,7 @@ const Camps = () => {
 
   const states = getStates();
   const districts = getDistricts(formData.state);
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     fetchCamps();
@@ -40,7 +43,7 @@ const Camps = () => {
       });
       setCamps(response.data);
     } catch (err) {
-      setError('Failed to fetch camps');
+      setError(t('Failed to fetch camps'));
     }
   };
 
@@ -48,6 +51,11 @@ const Camps = () => {
     const { name, value } = e.target;
     if (name === 'state') {
       setFormData({ ...formData, state: value, district: '', city: '' });
+      return;
+    }
+    if (name === 'contactNumber') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+      setFormData({ ...formData, contactNumber: digitsOnly });
       return;
     }
     setFormData({ ...formData, [name]: value });
@@ -61,7 +69,13 @@ const Camps = () => {
 
     if (!formData.campName || !formData.organizerName || !formData.state || 
         !formData.district || !formData.startDate || !formData.endDate || !formData.startTime || !formData.endTime || !formData.contactNumber) {
-      setError('Please fill in all required fields');
+      setError(t('Please fill in all required fields'));
+      setLoading(false);
+      return;
+    }
+
+    if (formData.contactNumber.length !== 10) {
+      setError(t('Contact number must be exactly 10 digits'));
       setLoading(false);
       return;
     }
@@ -71,7 +85,7 @@ const Camps = () => {
         await api.put(`/api/camps/${editingId}`, formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setSuccess('Camp updated successfully!');
+        setSuccess(t('Camp updated successfully!'));
       } else {
         const response = await api.post('/api/camps', formData, {
           headers: { Authorization: `Bearer ${token}` },
@@ -79,7 +93,7 @@ const Camps = () => {
         const notifiedCount = response.data.notifiedCount ?? 0;
         const warning = response.data.warning ? ` ${response.data.warning}` : '';
         setSuccess(
-          `Camp posted successfully! ${notifiedCount} nearby users were notified within 100 km.${warning}`
+          `${t('Camp posted successfully!')} ${notifiedCount} ${t('nearby users were notified within 100 km')}.${warning}`
         );
       }
       setFormData({
@@ -101,7 +115,7 @@ const Camps = () => {
       fetchCamps();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || (editingId ? 'Failed to update camp' : 'Failed to post camp'));
+      setError(err.response?.data?.message || (editingId ? t('Failed to update camp') : t('Failed to post camp')));
     } finally {
       setLoading(false);
     }
@@ -128,16 +142,16 @@ const Camps = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this camp?')) return;
+    if (!window.confirm(t('Are you sure you want to delete this camp?'))) return;
     try {
       await api.delete(`/api/camps/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSuccess('Camp deleted successfully!');
+      setSuccess(t('Camp deleted successfully!'));
       fetchCamps();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete camp');
+      setError(err.response?.data?.message || t('Failed to delete camp'));
     }
   };
 
@@ -153,8 +167,8 @@ const Camps = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 font-display">Blood Donation Camps</h1>
-              <p className="text-gray-500 mt-1">Organize and find blood donation camps</p>
+              <h1 className="text-3xl font-bold text-gray-900 font-display">{t('Camps')}</h1>
+                <p className="text-gray-500 mt-1">{t('Organize and find blood donation camps')}</p>
             </div>
           </div>
           <button onClick={() => {
@@ -166,7 +180,7 @@ const Camps = () => {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            {showForm ? 'Cancel' : 'New Camp'}
+            {showForm ? t('Cancel') : t('New Camp')}
           </button>
         </div>
 
@@ -185,90 +199,90 @@ const Camps = () => {
         {showForm && (
           <div className="card p-8 mb-8 animate-fade-in">
             <h2 className="text-xl font-bold text-gray-900 font-display mb-6">
-              {editingId ? 'Update Camp' : 'Post a New Blood Donation Camp'}
+              {editingId ? t('Update Camp') : t('Post a New Blood Donation Camp')}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label htmlFor="campName" className="block text-sm font-semibold text-gray-700 mb-1.5">Camp Name *</label>
+                  <label htmlFor="campName" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Camp Name *')}</label>
                   <input type="text" id="campName" name="campName" value={formData.campName} onChange={handleChange}
-                    className="input-field" placeholder="Enter camp name" />
+                    className="input-field" placeholder={t('Enter camp name')} />
                 </div>
                 <div>
-                  <label htmlFor="organizerName" className="block text-sm font-semibold text-gray-700 mb-1.5">Organizer Name *</label>
+                  <label htmlFor="organizerName" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Organizer Name *')}</label>
                   <input type="text" id="organizerName" name="organizerName" value={formData.organizerName} onChange={handleChange}
-                    className="input-field" placeholder="Enter organizer name" />
+                    className="input-field" placeholder={t('Enter organizer name')} />
                 </div>
                 <div>
-                  <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-1.5">State *</label>
+                  <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('State *')}</label>
                   <select id="state" name="state" value={formData.state} onChange={handleChange} className="select-field">
-                    <option value="">Select state</option>
-                    {states.map((state) => (<option key={state} value={state}>{state}</option>))}
+                    <option value="">{t('Select state')}</option>
+                    {states.map((state) => (<option key={state} value={state}>{getTranslatedState(state, lang)}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="district" className="block text-sm font-semibold text-gray-700 mb-1.5">District *</label>
+                  <label htmlFor="district" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('District *')}</label>
                   <select id="district" name="district" value={formData.district} onChange={handleChange}
                     disabled={!formData.state} className="select-field disabled:bg-gray-100">
-                    <option value="">{formData.state ? 'Select district' : 'Select state first'}</option>
-                    {districts.map((district) => (<option key={district} value={district}>{district}</option>))}
+                    <option value="">{formData.state ? t('Select district') : t('Select state first')}</option>
+                    {districts.map((district) => (<option key={district} value={district}>{getTranslatedDistrict(district, lang)}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-1.5">City / Town</label>
+                  <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('City / Town')}</label>
                   <input type="text" id="city" name="city" value={formData.city} onChange={handleChange}
-                    className="input-field" placeholder="Enter city or town" />
+                    className="input-field" placeholder={t('Enter city or town')} />
                 </div>
                 <div className="md:col-span-2">
-                  <label htmlFor="address" className="block text-sm font-semibold text-gray-700 mb-1.5">Address</label>
+                  <label htmlFor="address" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Address')}</label>
                   <input type="text" id="address" name="address" value={formData.address} onChange={handleChange}
-                    className="input-field" placeholder="Enter venue address" />
+                    className="input-field" placeholder={t('Enter venue address')} />
                 </div>
                 <div>
-                  <label htmlFor="startDate" className="block text-sm font-semibold text-gray-700 mb-1.5">Start Date *</label>
+                  <label htmlFor="startDate" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Start Date *')}</label>
                   <input type="date" id="startDate" name="startDate" value={formData.startDate}
                     min={new Date().toISOString().split('T')[0]} onChange={handleChange} className="input-field" />
                 </div>
                 <div>
-                  <label htmlFor="endDate" className="block text-sm font-semibold text-gray-700 mb-1.5">End Date *</label>
+                  <label htmlFor="endDate" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('End Date *')}</label>
                   <input type="date" id="endDate" name="endDate" value={formData.endDate}
                     min={formData.startDate || new Date().toISOString().split('T')[0]} onChange={handleChange} className="input-field" />
                 </div>
                 <div>
-                  <label htmlFor="startTime" className="block text-sm font-semibold text-gray-700 mb-1.5">Start Time *</label>
+                  <label htmlFor="startTime" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Start Time *')}</label>
                   <input type="time" id="startTime" name="startTime" value={formData.startTime} onChange={handleChange} className="input-field" />
                 </div>
                 <div>
-                  <label htmlFor="endTime" className="block text-sm font-semibold text-gray-700 mb-1.5">End Time *</label>
+                  <label htmlFor="endTime" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('End Time *')}</label>
                   <input type="time" id="endTime" name="endTime" value={formData.endTime} onChange={handleChange} className="input-field" />
                 </div>
                 <div>
-                  <label htmlFor="contactNumber" className="block text-sm font-semibold text-gray-700 mb-1.5">Contact Number *</label>
+                  <label htmlFor="contactNumber" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Contact Number *')}</label>
                   <input type="tel" id="contactNumber" name="contactNumber" value={formData.contactNumber}
-                    onChange={handleChange} className="input-field" placeholder="Enter contact number" />
+                    onChange={handleChange} className="input-field" placeholder={t('Enter contact number')} />
                 </div>
                 <div className="md:col-span-2">
-                  <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
+                  <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Description')}</label>
                   <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={3}
-                    className="input-field" placeholder="Enter camp description" />
+                    className="input-field" placeholder={t('Enter camp description')} />
                 </div>
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full">
-                {loading ? 'Posting...' : (editingId ? 'Update Camp' : 'Post Camp')}
+                {loading ? t('Posting...') : (editingId ? t('Update Camp') : t('Post Camp'))}
               </button>
             </form>
           </div>
         )}
 
         <div className="card p-8">
-          <h2 className="text-xl font-bold text-gray-900 font-display mb-6">Upcoming Camps</h2>
+          <h2 className="text-xl font-bold text-gray-900 font-display mb-6">{t('Upcoming Camps')}</h2>
           {camps.length === 0 ? (
             <div className="text-center py-16">
               <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              <h3 className="text-lg font-semibold text-gray-900">No camps posted yet</h3>
-              <p className="text-gray-500 mt-1">Be the first to post a blood donation camp!</p>
+              <h3 className="text-lg font-semibold text-gray-900">{t('No camps posted yet')}</h3>
+              <p className="text-gray-500 mt-1">{t('Be the first to post a blood donation camp!')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -283,27 +297,31 @@ const Camps = () => {
                     {user && camp.createdBy && (camp.createdBy._id === user._id || camp.createdBy === user._id) && (
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => handleEdit(camp)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-xs font-semibold transition-all">Edit</button>
+                          className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-xs font-semibold transition-all">{t('Edit')}</button>
                         <button onClick={() => handleDelete(camp._id)}
-                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">Delete</button>
+                          className="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 text-xs font-semibold transition-all">{t('Delete')}</button>
                       </div>
                     )}
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">{camp.campName}</h3>
-                  <p className="text-sm text-gray-500 mb-3">by {camp.organizerName}</p>
+                   <h3 className="text-lg font-bold text-gray-900 mb-1">{camp.campName}</h3>
+                   {camp.createdBy?._id ? (
+                     <p className="text-sm text-gray-500 mb-3">{t('by')} <Link to={`/user/${camp.createdBy._id}`} className="text-red-600 hover:underline">{camp.createdBy.name}</Link></p>
+                   ) : (
+                     <p className="text-sm text-gray-500 mb-3">{t('by')} {camp.organizerName}</p>
+                   )}
                   <div className="space-y-1.5 text-sm text-gray-600">
                     <p className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       </svg>
-                      {camp.city ? `${camp.city}, ` : ''}{camp.district}, {camp.state}
+                      {camp.city ? `${camp.city}, ` : ''}{getTranslatedDistrict(camp.district, lang)}, {getTranslatedState(camp.state, lang)}
                     </p>
                     {camp.address && <p className="flex items-center gap-2"><svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>{camp.address}</p>}
                     <p className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      {camp.startDate ? new Date(camp.startDate).toLocaleDateString() : 'N/A'} - {camp.endDate ? new Date(camp.endDate).toLocaleDateString() : 'N/A'}
+                      {camp.startDate ? new Date(camp.startDate).toLocaleDateString() : t('N/A')} - {camp.endDate ? new Date(camp.endDate).toLocaleDateString() : t('N/A')}
                     </p>
                     <p className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -317,7 +335,8 @@ const Camps = () => {
                       </svg>
                       {camp.contactNumber}
                     </p>
-                    {camp.description && <p className="pt-1 text-gray-500 italic">"{camp.description}"</p>}
+                    {camp.description && <p className="pt-1 text-gray-500 italic"><span className="font-medium">{t('Description')}:</span> "{camp.description}"</p>}
+                    {camp.location?.coordinates && camp.location.coordinates[0] !== 0 && camp.location.coordinates[1] !== 0 && null}
                   </div>
                 </div>
               ))}

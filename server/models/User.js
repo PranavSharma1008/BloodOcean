@@ -50,6 +50,34 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  age: {
+    type: Number,
+    default: '',
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'others', ''],
+    default: '',
+  },
+  religion: {
+    type: String,
+    enum: ['Hindu', 'Muslim', 'Christian', 'Sikh', ''],
+    default: '',
+  },
+  disease: {
+    type: String,
+    default: '',
+  },
+  unitsCanDonate: {
+    type: Number,
+    default: 1,
+    min: 1,
+  },
+  bloodCharges: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   available: {
     type: Boolean,
     default: false,
@@ -57,6 +85,17 @@ const userSchema = new mongoose.Schema({
   profileCompleted: {
     type: Boolean,
     default: false,
+  },
+  resetPasswordToken: {
+    type: String,
+    select: false,
+  },
+  resetPasswordExpire: {
+    type: Date,
+  },
+  avatar: {
+    type: String,
+    default: '',
   },
   location: {
     type: {

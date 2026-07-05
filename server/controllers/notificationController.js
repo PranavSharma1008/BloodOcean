@@ -8,6 +8,8 @@ const getNotifications = async (req, res) => {
     const notifications = await Notification.find({ donorId: req.user.id })
       .populate('requestId', 'patientName bloodGroup hospital status')
       .populate('campId', 'campName city district state startDate endDate')
+      .populate('bloodRequestId', 'requester donor bloodGroup hospital contactNumber status requesterLocation donorLocation')
+      .populate('relatedUserId', 'name phone bloodGroup city state district age gender religion disease avatar available')
       .sort({ createdAt: -1 });
 
     const unreadCount = await Notification.countDocuments({
@@ -37,7 +39,6 @@ const markAsRead = async (req, res) => {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
-    // Check if notification belongs to user
     if (notification.donorId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to update this notification' });
     }

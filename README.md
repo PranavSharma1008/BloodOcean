@@ -1,7 +1,10 @@
-<<<<<<< HEAD
-# Blood Donation Finder - Phase 1
+# BloodOcean
 
-A web application to connect blood donors with those in need. This is Phase 1 of the project, which includes user authentication and basic application structure.
+A web application to connect blood donors with those in need.
+
+**Live Frontend:** [https://bloodocean.vercel.app](https://bloodocean.vercel.app)
+
+![BloodOcean Dashboard](./dashboard-screenshot.png)
 
 ## Tech Stack
 
@@ -221,6 +224,4 @@ ISC
 ## Contact
 
 For questions or support, please open an issue in the repository.
-=======
-# BloodOcean
->>>>>>> 22ab42806cf03e14c1da2dd7ba0f3005f1cf3da6
+

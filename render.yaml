@@ -19,15 +19,19 @@ services:
       - key: FRONTEND_URL
         sync: false
 
-      # Email config — set these in Render dashboard after deployment
-      # Use SendGrid SMTP for production (free: 100 emails/day)
-      # - key: EMAIL_HOST
-      #   value: smtp.sendgrid.net
-      # - key: EMAIL_PORT
-      #   value: 587
-      # - key: EMAIL_USER
-      #   value: apikey
-      # - key: EMAIL_PASS
-      #   sync: false
-      # - key: EMAIL_FROM
-      #   sync: false
+      # ── Email (use SendGrid — Gmail does NOT work on Render) ──
+      # Sign up: https://sendgrid.com → create API key → verify sender
+      - key: EMAIL_SERVICE
+        value: sendgrid
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_USER
+        value: apikey
+      - key: EMAIL_PASS
+        sync: false      # Set to your SendGrid API key (starts with SG.)
+      - key: EMAIL_FROM
+        sync: false      # Must be a verified sender in SendGrid
+      - key: EMAIL_FROM_NAME
+        value: Blood Ocean

@@ -29,10 +29,10 @@ const searchNearbyDonors = async (req, res) => {
         return res.status(400).json({ message: 'GPS location is required for geographic search' });
       }
 
-      const validRadii = [5, 10, 20];
+      const validRadii = [5, 10, 20, 100];
       const searchRadius = radius ? parseInt(radius) : 10;
       if (!validRadii.includes(searchRadius)) {
-        return res.status(400).json({ message: 'Invalid radius. Must be 5, 10, or 20 km' });
+        return res.status(400).json({ message: 'Invalid radius. Must be 5, 10, 20, or 100 km' });
       }
 
       const query = {
@@ -104,10 +104,10 @@ const searchNearbyDonors = async (req, res) => {
         return res.status(400).json({ message: 'Invalid district for selected state' });
       }
 
-      const validRadii = [5, 10, 20];
+      const validRadii = [5, 10, 20, 100];
       const searchRadius = radius ? parseInt(radius) : 10;
       if (!validRadii.includes(searchRadius)) {
-        return res.status(400).json({ message: 'Invalid radius. Must be 5, 10, or 20 km' });
+        return res.status(400).json({ message: 'Invalid radius. Must be 5, 10, 20, or 100 km' });
       }
 
       const query = {

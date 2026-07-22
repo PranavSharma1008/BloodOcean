@@ -17,14 +17,14 @@ const EmergencyRequests = () => {
   const [error, setError] = useState('');
   const [requests, setRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterBloodGroup, setFilterBloodGroup] = useState('');
-  const [filterRadius, setFilterRadius] = useState(20);
+  const [filterBloodGroup, setFilterBloodGroup] = useState(user?.bloodGroup || '');
+  const [filterRadius, setFilterRadius] = useState(100);
   const [searchMode, setSearchMode] = useState('geographic');
   const [filterState, setFilterState] = useState('');
   const [filterDistrict, setFilterDistrict] = useState('');
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-  const radiusOptions = [5, 10, 20];
+  const radiusOptions = [5, 10, 20, 100];
   const states = getStates();
   const districts = getDistricts(filterState);
   const socketRef = useRef(null);
@@ -63,7 +63,15 @@ const EmergencyRequests = () => {
 
   const fetchEmergencyRequests = async () => {
     try {
+      const params = {};
+      if (user?.bloodGroup) params.bloodGroup = user.bloodGroup;
+      if (user?.location?.coordinates && user.location.coordinates[0] !== 0 && user.location.coordinates[1] !== 0) {
+        params.lat = user.location.coordinates[1];
+        params.lng = user.location.coordinates[0];
+        params.radius = 100;
+      }
       const response = await api.get('/api/emergency', {
+        params,
         headers: { Authorization: `Bearer ${token}` },
       });
       const currentUserId = user?.id || user?._id;
@@ -241,7 +249,7 @@ const EmergencyRequests = () => {
   const groupedRequests = groupRequestsByAge(filteredRequests);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-8 sm:py-12 px-4 sm:px-8 lg:px-12 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-8 sm:py-12 px-4 sm:px-8 lg:px-12 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-7xl mx-auto relative">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">

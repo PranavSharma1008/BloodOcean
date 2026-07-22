@@ -60,6 +60,12 @@ const campSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  radius: {
+    type: Number,
+    default: 100,
+    min: 1,
+    max: 500,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

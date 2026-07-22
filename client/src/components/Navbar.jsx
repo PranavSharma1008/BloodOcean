@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect, useCallback } from 'react';
+import { useState, useRef, useLayoutEffect, useCallback, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 import { gsap } from 'gsap';
@@ -48,6 +48,33 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.4;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      if (muted) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(() => {});
+      }
+    }
+  }, [muted]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -66,6 +93,17 @@ const Navbar = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname);
+
+  useEffect(() => {
+    if (isAuthPage) {
+      setMuted(true);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    }
+  }, [isAuthPage]);
 
   const navRef = useRef(null);
   const activeElementRef = useRef(null);
@@ -187,13 +225,23 @@ const Navbar = () => {
         .navigation-menu {
           position: relative;
           z-index: 1;
+          display: flex;
+          align-items: center;
+          height: 100%;
         }
         .navigation-menu ul {
           margin: 0;
           padding: 0;
           list-style: none;
           display: flex;
-          gap: 2px;
+          gap: 12px;
+          align-items: center;
+          height: 100%;
+        }
+        .navigation-menu ul li {
+          display: flex;
+          align-items: center;
+          height: 100%;
         }
         .navigation-menu ul li button {
           -webkit-appearance: none;
@@ -202,13 +250,17 @@ const Navbar = () => {
           border: none;
           cursor: pointer;
           background-color: transparent;
-          padding: 8px 16px;
+          padding: 6px 16px;
           margin: 0;
           font-size: 0.875rem;
           font-weight: 600;
           border-radius: 0.75rem;
           color: rgba(255,255,255,0.85);
           transition: color 0.25s, background-color 0.2s;
+          display: flex;
+          align-items: center;
+          height: 100%;
+          white-space: nowrap;
         }
         .navigation-menu ul li button:hover {
           color: white;
@@ -275,18 +327,20 @@ const Navbar = () => {
       `}</style>
 
       <nav className="sticky top-0 z-50 bg-gradient-to-r from-red-700 via-red-600 to-red-500 shadow-lg shadow-red-900/20 border-b border-red-500/20">
+        <audio ref={audioRef} src="/song.mp3" loop />
         <div className="w-full px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
             {/* Left: Logo + Nav */}
-            <div className="flex items-center gap-4 lg:gap-10">
-              <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
+            <div className="flex items-center gap-4 lg:gap-10 h-full min-w-0">
+              <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-3 group flex-shrink-0">
+                <img src="/logo.png" alt="BloodOcean" className="h-10 w-10 rounded-full object-cover ring-2 ring-white/30" />
                 <span className="text-white font-extrabold text-xl sm:text-2xl tracking-tight font-display">
                   BloodOcean
                 </span>
               </Link>
 
               {/* Desktop Nav with Sparkle Animation */}
-              {user && (
+              {user && !isAuthPage && (
                 <div ref={navRef} className="hidden lg:block navigation-menu">
                   <ul>
                     {navLinks.map((link, index) => (
@@ -306,42 +360,57 @@ const Navbar = () => {
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-3 lg:gap-4">
-              {user ? (
+            <div className="flex items-center gap-3 lg:gap-5 h-full ml-4 lg:ml-8 flex-shrink-0">
+              <button
+                onClick={() => setMuted(!muted)}
+                className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center h-10 w-10"
+                aria-label={muted ? 'Unmute music' : 'Mute music'}
+              >
+                {muted ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                )}
+              </button>
+              {user && !isAuthPage ? (
                 <>
-                  <div className="hidden sm:flex items-center gap-2">
+                  <div className="hidden sm:flex items-center gap-1">
                     <button
                       onClick={() => setLanguage('en')}
-                      className={`px-3 py-1 rounded-md text-sm font-semibold ${lang === 'en' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+                      className={`px-3 py-1 rounded-md text-sm font-semibold h-8 flex items-center ${lang === 'en' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
                     >
                       {t('EN')}
                     </button>
                     <button
                       onClick={() => setLanguage('hi')}
-                      className={`px-3 py-1 rounded-md text-sm font-semibold ${lang === 'hi' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+                      className={`px-3 py-1 rounded-md text-sm font-semibold h-8 flex items-center ${lang === 'hi' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
                     >
                       {t('HI')}
                     </button>
                   </div>
                   <ThemeToggle />
-                  <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 pl-1 pr-4 py-1 text-sm sm:text-base text-white/90">
+                  <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 pl-1 pr-4 py-1 text-sm sm:text-base text-white/90 h-9 whitespace-nowrap">
                     {user?.avatar ? (
-                      <img src={user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+                      <img src={user.avatar} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                      <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </span>
                     )}
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <Link to={`/user/${user._id}`} className="hover:underline">{user.name}</Link>
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+                    <Link to={`/user/${user._id}`} className="hover:underline truncate">{user.name}</Link>
                   </span>
                   <NotificationPanel />
-                  <span className="w-4" />
                   <button
                     onClick={handleLogout}
-                    className="hidden sm:inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm sm:text-base font-semibold text-white transition-all duration-200"
+                    className="hidden sm:inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm sm:text-base font-semibold text-white transition-all duration-200 h-9"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -350,30 +419,31 @@ const Navbar = () => {
                   </button>
                 </>
               ) : (
-                <div className="flex items-center gap-4">
-                  <div className="hidden sm:flex items-center gap-2">
+                <div className="flex items-center gap-3 h-full">
+                  <div className="hidden sm:flex items-center gap-1 h-full">
                     <button
                       onClick={() => setLanguage('en')}
-                      className={`px-3 py-1 rounded-md text-sm font-semibold ${lang === 'en' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+                      className={`px-3 py-1 rounded-md text-sm font-semibold h-8 flex items-center ${lang === 'en' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
                     >
                       {t('EN')}
                     </button>
                     <button
                       onClick={() => setLanguage('hi')}
-                      className={`px-3 py-1 rounded-md text-sm font-semibold ${lang === 'hi' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+                      className={`px-3 py-1 rounded-md text-sm font-semibold h-8 flex items-center ${lang === 'hi' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
                     >
                       {t('HI')}
                     </button>
                   </div>
+                  <ThemeToggle />
                   <Link
                     to="/login"
-                    className="text-white/80 hover:text-white text-base font-semibold transition duration-200"
+                    className="text-white/80 hover:text-white text-base font-semibold transition duration-200 flex items-center h-full"
                   >
                     {t('Login')}
                   </Link>
                   <Link
                     to="/register"
-                    className="rounded-full bg-white px-6 py-2.5 text-base font-bold text-red-600 shadow-lg shadow-red-900/20 hover:shadow-red-900/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                    className="rounded-full bg-white px-6 py-2.5 text-base font-bold text-red-600 shadow-lg shadow-red-900/20 hover:shadow-red-900/30 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center h-9"
                   >
                     {t('Register')}
                   </Link>
@@ -381,10 +451,10 @@ const Navbar = () => {
               )}
 
               {/* Mobile hamburger */}
-              {user && (
+              {user && !isAuthPage && (
                 <button
                   onClick={() => setMobileOpen(!mobileOpen)}
-                  className="lg:hidden p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all"
+                  className="lg:hidden p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center h-10 w-10"
                   aria-label={t('Toggle menu')}
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -401,7 +471,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile menu */}
-        {user && mobileOpen && (
+        {user && !isAuthPage && mobileOpen && (
           <div className="lg:hidden border-t border-white/10 bg-red-700/95 backdrop-blur-lg animate-slide-down">
             <div className="px-4 py-4 space-y-1">
               {navLinks.map((link) => (

@@ -108,7 +108,7 @@ const UpdateEmergency = () => {
 
   if (fetchLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-red-200 border-t-red-600"></div>
           <p className="mt-4 text-gray-500 font-medium">{t('Loading request...')}</p>
@@ -118,7 +118,7 @@ const UpdateEmergency = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-12 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-2xl mx-auto relative animate-fade-in">
         <div className="card p-8 sm:p-10">

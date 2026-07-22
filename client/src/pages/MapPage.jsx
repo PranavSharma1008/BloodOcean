@@ -466,7 +466,7 @@ const MapPage = () => {
 
   if (!trackingData && !loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 flex items-center justify-center">
         <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-xl max-w-md mx-4">
           <p className="font-semibold">{trackingError || t('Tracking session not found')}</p>
           <Link to="/emergency-requests" className="text-red-600 underline mt-2 inline-block">{t('Go back')}</Link>
@@ -476,7 +476,7 @@ const MapPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-8 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-8 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-7xl mx-auto relative">
         <div className="flex items-center gap-4 mb-6">

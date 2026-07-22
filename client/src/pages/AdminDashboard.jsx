@@ -206,7 +206,7 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block w-12 h-12 rounded-full border-4 border-gray-200 border-t-red-600 animate-spin" />
           <p className="mt-4 text-gray-600 font-medium">{t('Loading dashboard...')}</p>
@@ -217,7 +217,7 @@ const AdminDashboard = () => {
 
   if (error && user?.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 flex items-center justify-center">
         <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl">
           {error}
         </div>
@@ -226,7 +226,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-8 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-8 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-7xl mx-auto relative">
         <div className="flex items-center gap-4 mb-8">

@@ -134,8 +134,27 @@ const getEmergencyRequests = async (req, res) => {
       await Notification.deleteMany({ requestId: { $in: ids } });
     }
 
+    // Build query with blood group and distance filters
+    const query = { status: 'active' };
+
+    const { bloodGroup, lat, lng, radius } = req.query;
+
+    if (bloodGroup) {
+      query.bloodGroup = bloodGroup;
+    }
+
+    if (lat && lng) {
+      const radiusInMeters = (parseInt(radius) || 100) * 1000;
+      query.requesterLocation = {
+        $nearSphere: {
+          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
+          $maxDistance: radiusInMeters,
+        },
+      };
+    }
+
     // Get active requests sorted by date (newest first)
-    const emergencyRequests = await EmergencyRequest.find({ status: 'active' })
+    const emergencyRequests = await EmergencyRequest.find(query)
       .populate('requester', 'name email phone state district city')
       .populate('responders.donor', 'name email phone bloodGroup unitsCanDonate bloodCharges')
       .sort({ createdAt: -1 });
@@ -441,10 +460,12 @@ const acceptResponder = async (req, res) => {
         status: 'accepted',
       });
 
+      // Remove request from requester's list once they accept a donor
+      io.to(`user:${String(emergencyRequest.requester)}`).emit('request_completed', {
+        requestId: String(emergencyRequest._id),
+      });
+
       if (remainingNeeded <= 0) {
-        io.to(`user:${String(emergencyRequest.requester)}`).emit('request_completed', {
-          requestId: String(emergencyRequest._id),
-        });
         io.to(`user:${req.params.donorId}`).emit('request_completed', {
           requestId: String(emergencyRequest._id),
         });

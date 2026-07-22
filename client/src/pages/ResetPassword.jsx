@@ -39,7 +39,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-red-50/40 py-16 px-6 sm:px-8 lg:px-10 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50/50 to-red-50/30 py-16 px-6 sm:px-8 lg:px-10 relative overflow-hidden">
       <div className="absolute inset-0 bg-grid opacity-50" />
       <div className="absolute top-20 left-10 w-72 h-72 bg-red-200/20 rounded-full blur-3xl" />
       <div className="max-w-md w-full relative animate-fade-in">

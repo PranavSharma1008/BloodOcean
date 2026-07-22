@@ -126,9 +126,59 @@ const deleteDonation = async (req, res) => {
   }
 };
 
+const updateDonation = async (req, res) => {
+  try {
+    const donation = await Donation.findById(req.params.id);
+
+    if (!donation) {
+      return res.status(404).json({ message: 'Donation not found' });
+    }
+
+    if (donation.donor.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to update this donation' });
+    }
+
+    const { recipientName, bloodGroup, hospital, units, donationDate, notes } = req.body;
+
+    if (bloodGroup) {
+      const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+      if (!validBloodGroups.includes(bloodGroup)) {
+        return res.status(400).json({ message: 'Invalid blood group' });
+      }
+      donation.bloodGroup = bloodGroup;
+    }
+
+    if (donationDate) {
+      const parsedDate = new Date(donationDate);
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      if (parsedDate > now) {
+        return res.status(400).json({ message: 'Donation date cannot be in the future' });
+      }
+      donation.donationDate = parsedDate;
+    }
+
+    if (recipientName !== undefined) donation.recipientName = recipientName;
+    if (hospital !== undefined) donation.hospital = hospital;
+    if (units !== undefined) donation.units = Math.max(1, parseInt(units) || 1);
+    if (notes !== undefined) donation.notes = notes;
+
+    await donation.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Donation updated successfully',
+      donation,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createDonation,
   getDonations,
   getDonationById,
+  updateDonation,
   deleteDonation,
 };

@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import MagicLoader from './components/MagicLoader';
+import SplashScreen from './components/SplashScreen';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -23,9 +25,23 @@ import CampLocationMap from './pages/CampLocationMap';
 import DonationHistory from './pages/DonationHistory';
 import LiveTracking from './pages/LiveTracking';
 import ProtectedRoute from './components/ProtectedRoute';
+import useLocationTracker from './hooks/useLocationTracker';
 
 function AppContent() {
   const { loading } = useAuth();
+  useLocationTracker();
+  const [splashDone, setSplashDone] = useState(() => {
+    return sessionStorage.getItem('splashSeen') === 'true';
+  });
+
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem('splashSeen', 'true');
+    setSplashDone(true);
+  }, []);
+
+  if (!splashDone) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
 
   if (loading) {
     return (

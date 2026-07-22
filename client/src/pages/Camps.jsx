@@ -26,6 +26,7 @@ const Camps = () => {
     endTime: '',
     contactNumber: '',
     description: '',
+    radius: 100,
   });
 
   const states = getStates();
@@ -92,8 +93,9 @@ const Camps = () => {
         });
         const notifiedCount = response.data.notifiedCount ?? 0;
         const warning = response.data.warning ? ` ${response.data.warning}` : '';
+        const radiusUsed = response.data.radius || formData.radius || 100;
         setSuccess(
-          `${t('Camp posted successfully!')} ${notifiedCount} ${t('nearby users were notified within 100 km')}.${warning}`
+          `${t('Camp posted successfully!')} ${notifiedCount} ${t('nearby users were notified within')} ${radiusUsed} km.${warning}`
         );
       }
       setFormData({
@@ -109,6 +111,7 @@ const Camps = () => {
         endTime: '',
         contactNumber: '',
         description: '',
+        radius: 100,
       });
       setShowForm(false);
       setEditingId(null);
@@ -135,6 +138,7 @@ const Camps = () => {
       endTime: camp.endTime || '',
       contactNumber: camp.contactNumber || '',
       description: camp.description || '',
+      radius: camp.radius || 100,
     });
     setEditingId(camp._id);
     setShowForm(true);
@@ -156,7 +160,7 @@ const Camps = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-12 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-6xl mx-auto relative">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -174,7 +178,7 @@ const Camps = () => {
           <button onClick={() => {
             if (showForm) { setShowForm(false); setEditingId(null); setFormData({
               campName: '', organizerName: '', state: '', district: '', city: '', address: '',
-              startDate: '', endDate: '', startTime: '', endTime: '', contactNumber: '', description: '',
+              startDate: '', endDate: '', startTime: '', endTime: '', contactNumber: '', description: '', radius: 100,
             }); } else { setShowForm(true); }
           }} className="btn-primary flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -266,6 +270,18 @@ const Camps = () => {
                   <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={3}
                     className="input-field" placeholder={t('Enter camp description')} />
                 </div>
+                <div>
+                  <label htmlFor="radius" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Notify within (km)')}</label>
+                  <select id="radius" name="radius" value={formData.radius} onChange={handleChange} className="select-field">
+                    <option value={10}>10 km</option>
+                    <option value={25}>25 km</option>
+                    <option value={50}>50 km</option>
+                    <option value={100}>100 km</option>
+                    <option value={200}>200 km</option>
+                    <option value={500}>500 km</option>
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">{t('Users within this range will be notified')}</p>
+                </div>
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full">
                 {loading ? t('Posting...') : (editingId ? t('Update Camp') : t('Post Camp'))}
@@ -294,7 +310,7 @@ const Camps = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
-                    {user && camp.createdBy && (camp.createdBy._id === user._id || camp.createdBy === user._id) && (
+                    {user && camp.createdBy && (camp.createdBy._id?.toString() === user.id || camp.createdBy === user.id || user.role === 'admin') && (
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => handleEdit(camp)}
                           className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-xs font-semibold transition-all">{t('Edit')}</button>

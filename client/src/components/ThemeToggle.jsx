@@ -49,8 +49,10 @@ const ThemeToggle = ({ className, duration = 400 }) => {
         ref={buttonRef}
         onClick={handleToggle}
         className={cn(
-          'relative w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-200',
-          isDark ? 'text-amber-400 hover:text-amber-300' : 'text-white hover:text-gray-200',
+          'relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200',
+          isDark
+            ? 'bg-white/10 hover:bg-white/20 border border-white/20 text-amber-400 hover:text-amber-300'
+            : 'bg-gray-900/10 hover:bg-gray-900/20 border border-gray-900/20 text-gray-700 hover:text-gray-900',
           className
         )}
         aria-label={isDark ? t('Switch to light mode') : t('Switch to dark mode')}

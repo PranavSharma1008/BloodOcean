@@ -89,9 +89,9 @@ const createCamp = async (req, res) => {
     const populatedCamp = await Camp.findById(camp._id).populate('createdBy', 'name email');
 
     let notifiedCount = 0;
+    const searchRadiusKm = Math.min(Math.max(Number(req.body.radius) || 100, 1), 500);
     if (organizerLocation) {
       const io = require('../sockets/tracking').getIO();
-      const searchRadiusKm = 100;
       const matchingUsers = await User.find({
         _id: { $ne: req.user.id },
         profileCompleted: true,
@@ -134,7 +134,7 @@ const createCamp = async (req, res) => {
       await Promise.all(notificationPromises);
     }
 
-    const responsePayload = { populatedCamp, notifiedCount };
+    const responsePayload = { populatedCamp, notifiedCount, radius: searchRadiusKm };
     if (!organizerLocation) {
       responsePayload.warning = 'Camp created, but notifications were not sent because the organizer location is unavailable.';
     }
@@ -173,8 +173,9 @@ const updateCamp = async (req, res) => {
       return res.status(404).json({ message: 'Camp not found' });
     }
     
-    // Check if user is the creator
-    if (camp.createdBy.toString() !== req.user.id) {
+    // Check if user is the creator or admin
+    const requestUser = await User.findById(req.user.id).select('role');
+    if (camp.createdBy.toString() !== req.user.id && requestUser?.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to update this camp' });
     }
 
@@ -221,8 +222,9 @@ const deleteCamp = async (req, res) => {
       return res.status(404).json({ message: 'Camp not found' });
     }
     
-    // Check if user is the creator
-    if (camp.createdBy.toString() !== req.user.id) {
+    // Check if user is the creator or admin
+    const requestUser = await User.findById(req.user.id).select('role');
+    if (camp.createdBy.toString() !== req.user.id && requestUser?.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this camp' });
     }
     

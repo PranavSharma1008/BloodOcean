@@ -107,7 +107,7 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ message: 'Please provide an email' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+resetPasswordToken');
     if (!user) {
       return res.status(200).json({
         success: true,
@@ -117,38 +117,65 @@ const forgotPassword = async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
-    user.resetPasswordToken = otpHash;
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-    await user.save({ validateBeforeSave: false });
+
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          resetPasswordToken: otpHash,
+          resetPasswordExpire: new Date(Date.now() + 15 * 60 * 1000),
+        },
+      }
+    );
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV] Password reset OTP for ${email}: ${otp}`);
+    }
 
     const message = `Your password reset code is: ${otp}\n\nThis code will expire in 15 minutes.`;
 
     try {
       const sendResult = await sendEmail({
         to: user.email,
-        subject: 'Password Reset Code',
+        subject: 'Password Reset Code — Blood Ocean',
         text: message,
       });
 
       if (sendResult?.skipped) {
+        await User.updateOne(
+          { _id: user._id },
+          {
+            $unset: { resetPasswordToken: '', resetPasswordExpire: '' },
+          }
+        );
         return res.status(500).json({
           success: false,
           message: 'Email service is not configured on the server. Please contact support.',
         });
       }
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError.message);
+      console.error('[EMAIL] Failed to send password reset email:', emailError.message);
 
-      // Remove stored token so it's not left dangling
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpire = undefined;
-      await user.save({ validateBeforeSave: false });
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $unset: { resetPasswordToken: '', resetPasswordExpire: '' },
+        }
+      );
+
+      let hint = '';
+      const svc = (process.env.EMAIL_SERVICE || '').toLowerCase();
+      if (svc === 'gmail') {
+        hint = ' For Gmail: enable 2FA and use a 16-character App Password (not your regular password). Generate one at https://myaccount.google.com/apppasswords';
+      } else if (svc === 'sendgrid') {
+        hint = ' For SendGrid: ensure EMAIL_PASS is set to a valid SendGrid API key (SG.xxxx). Verify sender email is authorized in SendGrid dashboard.';
+      } else if (svc === 'resend') {
+        hint = ' For Resend: ensure EMAIL_PASS is set to a valid Resend API key. Verify your domain in Resend dashboard.';
+      }
 
       return res.status(500).json({
         success: false,
-        message: 'Failed to send reset code. The email service credentials may be incorrect. '
-          + 'For Gmail, ensure you are using a 16-character App Password (not your regular password). '
-          + 'Contact support for assistance.',
+        message: 'Failed to send reset code.' + hint,
       });
     }
 
@@ -157,6 +184,7 @@ const forgotPassword = async (req, res) => {
       message: 'If an account exists with that email, a reset code has been sent.',
     });
   } catch (error) {
+    console.error('[EMAIL] forgotPassword error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -176,7 +204,7 @@ const resetPassword = async (req, res) => {
       email,
       resetPasswordToken: tokenHash,
       resetPasswordExpire: { $gt: Date.now() },
-    }).select('+password');
+    }).select('+resetPasswordToken +password');
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired reset code' });
@@ -196,10 +224,51 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// @desc    Test email configuration
+// @route   POST /api/auth/test-email
+// @access  Public (but requires secret key to prevent abuse)
+const testEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Please provide an email address' });
+    }
+
+    if (!process.env.EMAIL_HOST && !process.env.EMAIL_SERVICE) {
+      return res.status(400).json({
+        success: false,
+        message: 'No email transport configured. Set EMAIL_HOST or EMAIL_SERVICE in .env',
+      });
+    }
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(400).json({
+        success: false,
+        message: 'EMAIL_USER or EMAIL_PASS is missing in .env',
+      });
+    }
+
+    await sendEmail({
+      to: email,
+      subject: 'Test Email — Blood Ocean',
+      text: 'Your email configuration is working correctly! This is a test from Blood Ocean.',
+    });
+
+    res.json({ success: true, message: `Test email sent to ${email}. Check your inbox (and spam folder).` });
+  } catch (error) {
+    console.error('[EMAIL] Test failed:', error.message);
+    res.status(500).json({
+      success: false,
+      message: `Email test failed: ${error.message}`,
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   forgotPassword,
   resetPassword,
+  testEmail,
 };

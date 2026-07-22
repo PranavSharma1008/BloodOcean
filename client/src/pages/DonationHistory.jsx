@@ -33,6 +33,8 @@ const DonationHistory = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+  const [editingDonation, setEditingDonation] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, recipientName: user?.name || '' }));
@@ -68,6 +70,40 @@ const DonationHistory = () => {
     }
   };
 
+  const handleEditClick = (donation) => {
+    setEditingDonation(donation);
+    setEditForm({
+      recipientName: donation.recipientName || '',
+      bloodGroup: donation.bloodGroup || '',
+      hospital: donation.hospital || '',
+      units: donation.units || 1,
+      donationDate: new Date(donation.donationDate).toISOString().split('T')[0],
+      notes: donation.notes || '',
+    });
+  };
+
+  const handleUpdate = async () => {
+    if (!editingDonation) return;
+    setError('');
+    setSuccess('');
+
+    if (editForm.donationDate > today) {
+      setError(t('Donation date cannot be in the future'));
+      return;
+    }
+
+    try {
+      const res = await api.put(`/api/donations/${editingDonation._id}`, editForm, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDonations((prev) => prev.map((d) => d._id === editingDonation._id ? res.data.donation : d));
+      setSuccess(t('Donation updated successfully'));
+      setEditingDonation(null);
+    } catch (err) {
+      setError(err.response?.data?.message || t('Failed to update donation'));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -96,7 +132,7 @@ const DonationHistory = () => {
   const nextBadge = BADGES.slice().reverse().find((b) => donations.length < b.min);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-8 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-8 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-6xl mx-auto relative">
         <div className="flex items-center gap-4 mb-8">
@@ -212,6 +248,58 @@ const DonationHistory = () => {
               </div>
             )}
 
+            {editingDonation && (
+              <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">{t('Update Donation')}</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Recipient Name')}</label>
+                      <input type="text" className="input-field" value={editForm.recipientName}
+                        onChange={(e) => setEditForm({ ...editForm, recipientName: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Blood Group')}</label>
+                      <select className="select-field" value={editForm.bloodGroup}
+                        onChange={(e) => setEditForm({ ...editForm, bloodGroup: e.target.value })}>
+                        {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
+                          <option key={bg} value={bg}>{bg}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Hospital')}</label>
+                      <input type="text" className="input-field" value={editForm.hospital}
+                        onChange={(e) => setEditForm({ ...editForm, hospital: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Units')}</label>
+                      <input type="number" min="1" className="input-field" value={editForm.units}
+                        onChange={(e) => setEditForm({ ...editForm, units: parseInt(e.target.value) || 1 })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Donation Date')}</label>
+                      <input type="date" className="input-field" max={today} value={editForm.donationDate}
+                        onChange={(e) => setEditForm({ ...editForm, donationDate: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Notes')}</label>
+                      <input type="text" className="input-field" value={editForm.notes}
+                        onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-6">
+                    <button onClick={() => setEditingDonation(null)} className="btn-secondary flex-1 py-3 text-sm">
+                      {t('Cancel')}
+                    </button>
+                    <button onClick={handleUpdate} className="btn-primary flex-1 py-3 text-sm">
+                      {t('Save Changes')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-4">
               {donations.map((d) => (
                 <div key={d._id} className="card p-5 flex items-center gap-5">
@@ -229,6 +317,12 @@ const DonationHistory = () => {
                     {d.recipientName && <p className="text-sm text-gray-600 mt-1">{t('Recipient: ')}{d.recipientName}</p>}
                     <p className="text-xs text-gray-400 mt-1">{new Date(d.donationDate).toLocaleDateString()}</p>
                   </div>
+                  <button
+                    onClick={() => handleEditClick(d)}
+                    className="px-3 py-2 rounded-xl border-2 border-blue-200 text-blue-600 hover:bg-blue-50 text-sm font-semibold transition-all"
+                  >
+                    {t('Update')}
+                  </button>
                   <button
                     onClick={() => handleDelete(d._id)}
                     disabled={deletingId === d._id}

@@ -33,7 +33,7 @@ const Search = () => {
   const [requestLoading, setRequestLoading] = useState(false);
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-  const radiusOptions = [5, 10, 20];
+  const radiusOptions = [5, 10, 20, 100];
   const states = getStates();
   const districts = getDistricts(searchParams.state);
 
@@ -81,7 +81,7 @@ const Search = () => {
     if (name === 'radius') {
       const radiusValue = parseInt(value);
       // Snap to nearest valid radius value
-      const validRadii = [5, 10, 20];
+      const validRadii = [5, 10, 20, 100];
       const snappedValue = validRadii.reduce((prev, curr) => 
         Math.abs(curr - radiusValue) < Math.abs(prev - radiusValue) ? curr : prev
       );
@@ -215,7 +215,7 @@ const Search = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-12 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-4xl mx-auto relative">
         <div className="card p-8 mb-6">

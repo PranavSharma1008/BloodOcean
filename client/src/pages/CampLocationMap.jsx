@@ -109,7 +109,7 @@ const CampLocationMap = () => {
   const userLoc = user?.location?.coordinates;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50/30 py-8 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-8 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
       <div className="max-w-7xl mx-auto relative">
         <div className="flex items-center gap-4 mb-6">

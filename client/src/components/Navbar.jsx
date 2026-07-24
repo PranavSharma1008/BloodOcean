@@ -394,19 +394,21 @@ const Navbar = () => {
                     </button>
                   </div>
                   <ThemeToggle />
-                  <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 pl-1 pr-4 py-1 text-sm sm:text-base text-white/90 h-9 whitespace-nowrap">
+                  <Link
+                    to={`/user/${user._id || user.id}`}
+                    className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 pl-1.5 pr-4 py-1 text-sm text-white h-9 whitespace-nowrap transition-all duration-200 shadow-sm hover:scale-[1.03] active:scale-[0.97]"
+                    title={t('View Profile')}
+                  >
                     {user?.avatar ? (
-                      <img src={user.avatar} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                      <img src={user.avatar} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                      <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold text-xs text-white">
+                        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                       </span>
                     )}
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-                    <Link to={`/user/${user._id}`} className="hover:underline truncate">{user.name}</Link>
-                  </span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                    <span className="truncate max-w-[140px] font-semibold">{user.name}</span>
+                  </Link>
                   <NotificationPanel />
                   <button
                     onClick={handleLogout}
@@ -474,6 +476,29 @@ const Navbar = () => {
         {user && !isAuthPage && mobileOpen && (
           <div className="lg:hidden border-t border-white/10 bg-red-700/95 backdrop-blur-lg animate-slide-down">
             <div className="px-4 py-4 space-y-1">
+              <Link
+                to={`/user/${user._id || user.id}`}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 p-3 mb-3 rounded-2xl bg-white/15 border border-white/20 text-white font-semibold shadow-sm active:scale-95 transition-all"
+              >
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm text-white flex-shrink-0">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm truncate">{user.name}</div>
+                  <div className="text-xs text-red-100 flex items-center gap-1.5 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>View & Edit Profile</span>
+                  </div>
+                </div>
+                <svg className="w-5 h-5 text-white/70 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
               {navLinks.map((link) => (
                 <Link
                   key={link.to}

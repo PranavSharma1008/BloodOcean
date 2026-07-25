@@ -84,30 +84,34 @@ const NotificationPanel = () => {
   };
 
   const handleAcceptRequest = async (notificationId, bloodRequestId) => {
-    setActionLoading((prev) => ({ ...prev, [bloodRequestId]: 'accept' }));
+    const idToUse = typeof bloodRequestId === 'object' ? (bloodRequestId?._id || bloodRequestId?.id) : bloodRequestId;
+    if (!idToUse) return;
+    setActionLoading((prev) => ({ ...prev, [idToUse]: 'accept' }));
     try {
-      const result = await acceptBloodRequest(bloodRequestId);
+      const result = await acceptBloodRequest(idToUse);
       if (result.success) {
         fetchNotifications();
       }
     } catch (error) {
       console.error('Failed to accept request:', error);
     } finally {
-      setActionLoading((prev) => ({ ...prev, [bloodRequestId]: false }));
+      setActionLoading((prev) => ({ ...prev, [idToUse]: false }));
     }
   };
 
   const handleDeclineRequest = async (notificationId, bloodRequestId) => {
-    setActionLoading((prev) => ({ ...prev, [bloodRequestId]: 'decline' }));
+    const idToUse = typeof bloodRequestId === 'object' ? (bloodRequestId?._id || bloodRequestId?.id) : bloodRequestId;
+    if (!idToUse) return;
+    setActionLoading((prev) => ({ ...prev, [idToUse]: 'decline' }));
     try {
-      const result = await declineBloodRequest(bloodRequestId);
+      const result = await declineBloodRequest(idToUse);
       if (result.success) {
         fetchNotifications();
       }
     } catch (error) {
       console.error('Failed to decline request:', error);
     } finally {
-      setActionLoading((prev) => ({ ...prev, [bloodRequestId]: false }));
+      setActionLoading((prev) => ({ ...prev, [idToUse]: false }));
     }
   };
 
@@ -232,22 +236,28 @@ const NotificationPanel = () => {
                           <p className="mt-1 text-[11px] text-gray-500">{t('Camp: ')}{notification.campId.campName}</p>
                         )}
                         {(notification.type === 'donor_request' || notification.type === 'blood_request_update') && notification.bloodRequestId && (
-                          <div className="mt-2 flex gap-2">
+                          <div className="mt-2 flex flex-wrap gap-2 items-center">
+                            {(notification.relatedUserId?._id || notification.bloodRequestId?.requester?._id || (typeof notification.bloodRequestId?.requester === 'string' && notification.bloodRequestId?.requester)) && (
+                              <a href={`/user/${notification.relatedUserId?._id || notification.bloodRequestId?.requester?._id || notification.bloodRequestId?.requester}`} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-all">
+                                {t('View Profile')}
+                              </a>
+                            )}
                             {(notification.type === 'donor_request' && notification.actionTaken === 'pending') && (
                               <>
                                 <button
-                                  onClick={() => handleAcceptRequest(notification._id, notification.bloodRequestId._id)}
-                                  disabled={actionLoading[notification.bloodRequestId._id]}
+                                  onClick={() => handleAcceptRequest(notification._id, notification.bloodRequestId)}
+                                  disabled={actionLoading[notification.bloodRequestId?._id || notification.bloodRequestId]}
                                   className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50 transition-all"
                                 >
-                                  {actionLoading[notification.bloodRequestId._id] === 'accept' ? t('Accepting...') || 'Accepting...' : t('Accept')}
+                                  {actionLoading[notification.bloodRequestId?._id || notification.bloodRequestId] === 'accept' ? t('Accepting...') || 'Accepting...' : t('Accept')}
                                 </button>
                                 <button
-                                  onClick={() => handleDeclineRequest(notification._id, notification.bloodRequestId._id)}
-                                  disabled={actionLoading[notification.bloodRequestId._id]}
+                                  onClick={() => handleDeclineRequest(notification._id, notification.bloodRequestId)}
+                                  disabled={actionLoading[notification.bloodRequestId?._id || notification.bloodRequestId]}
                                   className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 disabled:opacity-50 transition-all"
                                 >
-                                  {actionLoading[notification.bloodRequestId._id] === 'decline' ? t('Declining...') || 'Declining...' : t('Decline')}
+                                  {actionLoading[notification.bloodRequestId?._id || notification.bloodRequestId] === 'decline' ? t('Declining...') || 'Declining...' : t('Decline')}
                                 </button>
                               </>
                             )}
@@ -257,7 +267,6 @@ const NotificationPanel = () => {
                             {notification.actionTaken === 'declined' && (
                               <span className="inline-block px-2 py-1 bg-gray-200 text-gray-700 rounded-lg text-[10px] font-bold">{t('Declined')}</span>
                             )}
-                            {notification.actionTaken === 'accepted' && null}
                           </div>
                         )}
                         {notification.type === 'emergency_response' && notification.relatedUserId && (

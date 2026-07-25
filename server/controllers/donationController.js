@@ -17,7 +17,7 @@ const getBadge = (count) => {
 
 const createDonation = async (req, res) => {
   try {
-    const { recipientName, bloodGroup, hospital, units, donationDate, notes, requestId } = req.body;
+    const { recipientName, bloodGroup, hospital, units, donationDate, notes, image, memoryStory, requestId } = req.body;
 
     if (!bloodGroup) {
       return res.status(400).json({ message: 'Blood group is required' });
@@ -44,6 +44,8 @@ const createDonation = async (req, res) => {
       units: units || 1,
       donationDate: parsedDonationDate,
       notes: notes || '',
+      image: image || '',
+      memoryStory: memoryStory || '',
       requestId: requestId || undefined,
     });
 
@@ -138,7 +140,7 @@ const updateDonation = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this donation' });
     }
 
-    const { recipientName, bloodGroup, hospital, units, donationDate, notes } = req.body;
+    const { recipientName, bloodGroup, hospital, units, donationDate, notes, image, memoryStory } = req.body;
 
     if (bloodGroup) {
       const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -162,6 +164,8 @@ const updateDonation = async (req, res) => {
     if (hospital !== undefined) donation.hospital = hospital;
     if (units !== undefined) donation.units = Math.max(1, parseInt(units) || 1);
     if (notes !== undefined) donation.notes = notes;
+    if (image !== undefined) donation.image = image;
+    if (memoryStory !== undefined) donation.memoryStory = memoryStory;
 
     await donation.save();
 

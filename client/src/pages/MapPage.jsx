@@ -434,7 +434,7 @@ const MapPage = () => {
                   {m.type === 'donor' && (
                     <>
                       <p className="font-bold text-green-700 mb-1">{t('Donor')}</p>
-                      <Link to={`/user/${m.data._id}`} className="text-sm text-green-600 hover:underline">{m.data.name}</Link>
+                      <Link to={`/user/${m.data._id}`} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 hover:underline">{m.data.name}</Link>
                       <p className="text-sm font-bold text-red-600">{m.data.bloodGroup}</p>
                       <p className="text-xs text-gray-500">{m.data.city && `${m.data.city}, `}{getTranslatedState(m.data.state, lang)}</p>
                     </>

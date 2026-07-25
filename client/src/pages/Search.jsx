@@ -5,6 +5,7 @@ import api from '../api/axios';
 import { getStates, getDistricts, normalizeDistrict, getTranslatedState, getTranslatedDistrict } from '../data/locations';
 import { ExpandableSearchBar } from '@/components/lightswind/expandable-search-bar';
 import { useLanguage } from '../context/LanguageContext';
+import { getTranslatedName } from '../utils/nameTranslator';
 
 const Search = () => {
   const { user, token, refreshUser } = useAuth();
@@ -31,6 +32,7 @@ const Search = () => {
     notes: '',
   });
   const [requestLoading, setRequestLoading] = useState(false);
+  const [modalError, setModalError] = useState('');
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const radiusOptions = [5, 10, 20, 100];
@@ -47,6 +49,7 @@ const Search = () => {
       const state = user.state || 'Himachal Pradesh';
       setSearchParams((prev) => ({
         ...prev,
+        bloodGroup: prev.bloodGroup || user.bloodGroup || '',
         state,
         district: normalizeDistrict(state, user.district || prev.district),
       }));
@@ -181,34 +184,57 @@ const Search = () => {
 
   const openRequestModal = (donor) => {
     setSelectedDonor(donor);
+    setModalError('');
     setRequestForm({ hospital: '', contactNumber: '', notes: '' });
     setShowRequestModal(true);
   };
 
   const handleSendBloodRequest = async (e) => {
     e.preventDefault();
+    setModalError('');
     setError('');
     setRequestLoading(true);
+
     if (!requestForm.hospital.trim() || !requestForm.contactNumber.trim()) {
-      setError(t('Please fill in hospital and contact number'));
+      setModalError(t('Please fill in hospital and contact number'));
       setRequestLoading(false);
       return;
     }
+
+    const contactDigits = requestForm.contactNumber.replace(/\D/g, '');
+    if (contactDigits.length !== 10) {
+      setModalError(t('Contact number must be exactly 10 digits'));
+      setRequestLoading(false);
+      return;
+    }
+
+    const donorId = selectedDonor.id || selectedDonor._id;
+    const currentUserId = String(user?.id || user?._id || '');
+
+    if (String(donorId) === currentUserId) {
+      setModalError(t('You cannot request blood from yourself'));
+      setRequestLoading(false);
+      return;
+    }
+
     try {
-      const result = await createBloodRequest(selectedDonor.id, {
+      const result = await createBloodRequest(donorId, {
         bloodGroup: selectedDonor.bloodGroup,
-        ...requestForm,
+        hospital: requestForm.hospital.trim(),
+        contactNumber: contactDigits,
+        notes: requestForm.notes.trim(),
       });
+
       if (result.success) {
         setSuccessMessage(t('Blood request sent successfully!'));
         setShowRequestModal(false);
         setSelectedDonor(null);
         setRequestForm({ hospital: '', contactNumber: '', notes: '' });
       } else {
-        setError(result.message);
+        setModalError(result.message || t('Failed to send blood request'));
       }
     } catch (err) {
-      setError(err.response?.data?.message || t('Failed to send blood request'));
+      setModalError(err.response?.data?.message || t('Failed to send blood request'));
     } finally {
       setRequestLoading(false);
     }
@@ -377,8 +403,11 @@ const Search = () => {
                           <span className="text-lg font-bold text-red-700">{donor.bloodGroup}</span>
                         </div>
                         <div>
-                          <Link to={`/user/${donor.id}`} className="font-bold text-gray-900 hover:text-red-600 transition-colors">
-                            {donor.name}
+                          <Link to={`/user/${donor.id}`} target="_blank" rel="noopener noreferrer" className="font-bold text-gray-900 hover:text-red-600 transition-colors inline-flex items-center gap-1">
+                            {getTranslatedName(donor.name, lang)}
+                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
                           </Link>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className={`badge text-xs ${donor.available ? 'badge-green' : 'badge-gray'}`}>
@@ -399,12 +428,18 @@ const Search = () => {
                         </p>
                       )}
                     </div>
-                    {donor.available && (
-                      <button type="button" onClick={() => openRequestModal(donor)}
-                        className="mt-3 w-full px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all">
-                        {t('Request Blood')}
-                      </button>
-                    )}
+                    <div className="mt-3 flex items-center gap-2">
+                      <a href={`/user/${donor.id}`} target="_blank" rel="noopener noreferrer"
+                        className="flex-1 px-3 py-2 text-center rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-all">
+                        {t('View Profile')}
+                      </a>
+                      {donor.available && (
+                        <button type="button" onClick={() => openRequestModal(donor)}
+                          className="flex-1 px-3 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all">
+                          {t('Request Blood')}
+                        </button>
+                      )}
+                    </div>
                   </div>
                  ))}
                </div>
@@ -421,11 +456,19 @@ const Search = () => {
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                    </svg>
                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">{t('Request Blood from')} <Link to={`/user/${selectedDonor.id}`} className="text-red-600 hover:underline">{selectedDonor.name}</Link></h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t('Request Blood from')} <Link to={`/user/${selectedDonor.id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">{selectedDonor.name}</Link></h3>
                 </div>
-                <p className="text-gray-600 mb-4 text-sm">
-                  {t('Send a blood request to')} <Link to={`/user/${selectedDonor.id}`} className="font-bold text-red-600 hover:underline">{selectedDonor.name}</Link> {t('for')} <span className="font-bold">{selectedDonor.bloodGroup}</span>.
-                </p>
+                 <p className="text-gray-600 mb-4 text-sm">
+                   {t('Send a blood request to')} <Link to={`/user/${selectedDonor.id}`} target="_blank" rel="noopener noreferrer" className="font-bold text-red-600 hover:underline">{selectedDonor.name}</Link> {t('for')} <span className="font-bold">{selectedDonor.bloodGroup}</span>.
+                 </p>
+                {modalError && (
+                  <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-2.5 rounded-xl text-xs font-medium mb-4 flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>{modalError}</span>
+                  </div>
+                )}
                <div className="space-y-3 mb-6">
                  <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Hospital Name *')}</label>

@@ -174,7 +174,7 @@ const CampLocationMap = () => {
                 <Popup>
                   <div className="min-w-[180px]">
                     <p className="font-bold text-red-700 mb-1">{t('Your Location')}</p>
-                    <Link to={`/user/${user._id}`} className="text-sm text-red-600 hover:underline">{user.name}</Link>
+                    <Link to={`/user/${user._id}`} target="_blank" rel="noopener noreferrer" className="text-sm text-red-600 hover:underline">{user.name}</Link>
                     <p className="text-xs text-gray-500">{distance !== null ? `${distance}${t(' km from camp')}` : t('Location available')}</p>
                   </div>
                 </Popup>

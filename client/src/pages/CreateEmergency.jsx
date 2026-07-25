@@ -1,20 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axios';
 
 const CreateEmergency = () => {
-  const { user, token } = useAuth();
+  const { user, token, updateLocation } = useAuth();
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [geoDenied, setGeoDenied] = useState(false);
+  const [detectingLoc, setDetectingLoc] = useState(false);
+
+  const hasSavedLocation =
+    user?.location?.coordinates &&
+    user.location.coordinates[0] !== 0 &&
+    user.location.coordinates[1] !== 0;
+
+  useEffect(() => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'denied') {
+          setGeoDenied(true);
+        }
+        result.onchange = () => {
+          setGeoDenied(result.state === 'denied');
+        };
+      }).catch(() => {});
+    }
+  }, []);
+
+  const handleDetectLocationNow = () => {
+    setDetectingLoc(true);
+    setError('');
+    if (!navigator.geolocation) {
+      setError(t('Geolocation is not supported by your browser'));
+      setDetectingLoc(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const res = await updateLocation(latitude, longitude);
+        setDetectingLoc(false);
+        if (res.success) {
+          setGeoDenied(false);
+        } else {
+          setError(res.message || t('Failed to save location'));
+        }
+      },
+      (err) => {
+        setDetectingLoc(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setGeoDenied(true);
+          setError(t('Browser location permission denied. Please allow location in browser settings or set your location manually.'));
+        } else {
+          setError(t('Unable to retrieve location. Please try setting it manually.'));
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const formatLocalISO = (date) => {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
   const getDefaultExpiry = () => {
     const d = new Date();
-    d.setHours(d.getHours() + 24);
-    return d.toISOString().slice(0, 16);
+    d.setDate(d.getDate() + 1);
+    return formatLocalISO(d);
+  };
+
+  const getMinExpiry = () => {
+    return formatLocalISO(new Date());
   };
 
   const [formData, setFormData] = useState({
@@ -66,13 +128,11 @@ const CreateEmergency = () => {
       return;
     }
 
-    // Check if user has location set when using current location
-    if (formData.useCurrentLocation) {
-      if (!user?.location || user.location.coordinates[0] === 0 || user.location.coordinates[1] === 0) {
-        setError(t('Please set your location first or uncheck "Use my current location"'));
-        setLoading(false);
-        return;
-      }
+    // Check if user has location set
+    if (!hasSavedLocation) {
+      setError(t('Browser location permission is blocked or not set. Please allow browser location access or set your location in settings.'));
+      setLoading(false);
+      return;
     }
 
     try {
@@ -85,16 +145,6 @@ const CreateEmergency = () => {
         unitsNeeded: formData.unitsNeeded,
         expiresAt: new Date(formData.expiresAt).toISOString(),
       };
-
-      if (!formData.useCurrentLocation) {
-        // Would need to add manual location input fields
-        // For now, we'll use the user's stored location
-        if (!user?.location || user.location.coordinates[0] === 0 || user.location.coordinates[1] === 0) {
-          setError(t('Please set your location first'));
-          setLoading(false);
-          return;
-        }
-      }
 
       const response = await api.post('/api/emergency', requestData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -128,6 +178,41 @@ const CreateEmergency = () => {
               <p className="text-gray-500 mt-1">{t('Post an urgent blood donation request')}</p>
             </div>
           </div>
+
+          {(!hasSavedLocation || geoDenied) && (
+            <div className="bg-amber-50 border-2 border-amber-300/80 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-200/80 text-amber-800 flex items-center justify-center flex-shrink-0 font-bold text-lg">
+                  📍
+                </div>
+                <div>
+                  <h4 className="font-bold text-amber-900 text-sm">{t('Location Access Required')}</h4>
+                  <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
+                    {geoDenied
+                      ? t('Browser location permission is blocked. Please allow location access in browser settings or set location manually.')
+                      : t('No location set for your account. Please enable browser location or set your location manually to match nearby donors.')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDetectLocationNow}
+                  disabled={detectingLoc}
+                  className="btn-primary text-xs py-2 px-3 whitespace-nowrap flex-1 sm:flex-none"
+                >
+                  {detectingLoc ? t('Detecting...') : t('Allow / Detect GPS')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/location')}
+                  className="btn-secondary text-xs py-2 px-3 whitespace-nowrap flex-1 sm:flex-none"
+                >
+                  {t('Set Manually')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3.5 rounded-xl text-sm font-medium flex items-center gap-2 mb-6">
@@ -176,7 +261,7 @@ const CreateEmergency = () => {
                 <label htmlFor="expiresAt" className="block text-sm font-semibold text-gray-700 mb-1.5">{t('Request Expiry *')}</label>
                 <input type="datetime-local" id="expiresAt" name="expiresAt" value={formData.expiresAt}
                   onChange={handleChange} className="input-field"
-                  min={new Date().toISOString().slice(0, 16)} />
+                  min={getMinExpiry()} />
                 <p className="text-xs text-gray-500 mt-1">{t('Request will automatically be removed after this time')}</p>
               </div>
             </div>

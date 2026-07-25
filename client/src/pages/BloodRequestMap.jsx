@@ -114,11 +114,11 @@ const BloodRequestMap = () => {
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-red-500" />
-              <span className="text-sm font-medium text-gray-700">{t('Requester:')} <Link to={`/user/${request.requester._id}`} className="text-red-600 hover:underline">{request.requester.name}</Link></span>
+              <span className="text-sm font-medium text-gray-700">{t('Requester:')} <Link to={`/user/${request.requester._id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">{request.requester.name}</Link></span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-sm font-medium text-gray-700">{t('Donor:')} <Link to={`/user/${request.donor._id}`} className="text-green-600 hover:underline">{request.donor.name}</Link></span>
+              <span className="text-sm font-medium text-gray-700">{t('Donor:')} <Link to={`/user/${request.donor._id}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">{request.donor.name}</Link></span>
             </div>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
               request.status === 'accepted' ? 'bg-green-100 text-green-700' :
@@ -149,7 +149,7 @@ const BloodRequestMap = () => {
                 <Popup>
                   <div className="min-w-[180px]">
                     <p className="font-bold text-red-700 mb-1">{t('Requester')}</p>
-                    <Link to={`/user/${request.requester._id}`} className="text-sm text-red-600 hover:underline">{request.requester.name}</Link>
+                    <Link to={`/user/${request.requester._id}`} target="_blank" rel="noopener noreferrer" className="text-sm text-red-600 hover:underline">{request.requester.name}</Link>
                     <p className="text-sm font-bold text-red-600">{request.bloodGroup}</p>
                     <p className="text-xs text-gray-500">{request.requester.city && `${request.requester.city}, `}{getTranslatedState(request.requester.state, lang)}</p>
                   </div>
@@ -161,7 +161,7 @@ const BloodRequestMap = () => {
                 <Popup>
                   <div className="min-w-[180px]">
                     <p className="font-bold text-green-700 mb-1">{t('Donor')}</p>
-                    <Link to={`/user/${request.donor._id}`} className="text-sm text-green-600 hover:underline">{request.donor.name}</Link>
+                    <Link to={`/user/${request.donor._id}`} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 hover:underline">{request.donor.name}</Link>
                     <p className="text-sm font-bold text-red-600">{request.bloodGroup}</p>
                     <p className="text-xs text-gray-500">{request.donor.city && `${request.donor.city}, `}{getTranslatedState(request.donor.state, lang)}</p>
                   </div>

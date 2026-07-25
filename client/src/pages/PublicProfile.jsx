@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslatedState, getTranslatedDistrict } from '../data/locations';
+import { getTranslatedName } from '../utils/nameTranslator';
 
 const PublicProfile = () => {
   const { id } = useParams();
@@ -34,10 +35,25 @@ const PublicProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-10 h-10 rounded-full border-4 border-gray-200 border-t-red-600 animate-spin" />
-          <p className="mt-3 text-gray-500 font-medium">{t('Loading profile...')}</p>
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50/50 to-red-50/20 py-12 px-4 sm:px-6 lg:px-8 relative">
+        <div className="max-w-2xl mx-auto relative">
+          <div className="card p-8 sm:p-10">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-14 h-14 rounded-2xl bg-gray-200" />
+              <div>
+                <div className="h-8 w-48 bg-gray-200 rounded-lg mb-2" />
+                <div className="h-4 w-32 bg-gray-100 rounded" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="h-4 w-20 bg-gray-100 rounded" />
+                  <div className="h-4 w-32 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -72,7 +88,7 @@ const PublicProfile = () => {
               )}
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 font-display">{profileUser.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 font-display">{getTranslatedName(profileUser.name, lang)}</h1>
               <p className="text-gray-500 mt-1">{t('Blood Donor Profile')}</p>
             </div>
           </div>
@@ -80,7 +96,7 @@ const PublicProfile = () => {
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-500">{t('Name')}</span>
-              <span className="text-sm font-semibold text-gray-900">{profileUser.name}</span>
+              <span className="text-sm font-semibold text-gray-900">{getTranslatedName(profileUser.name, lang)}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-500">{t('Email')}</span>
@@ -103,13 +119,13 @@ const PublicProfile = () => {
             {profileUser.gender && (
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">{t('Gender')}</span>
-                <span className="text-sm font-semibold text-gray-900 capitalize">{profileUser.gender}</span>
+                <span className="text-sm font-semibold text-gray-900 capitalize">{t(profileUser.gender.toLowerCase()) || profileUser.gender}</span>
               </div>
             )}
             {profileUser.religion && (
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">{t('Religion')}</span>
-                <span className="text-sm font-semibold text-gray-900">{profileUser.religion}</span>
+                <span className="text-sm font-semibold text-gray-900">{t(profileUser.religion) || profileUser.religion}</span>
               </div>
             )}
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -137,7 +153,7 @@ const PublicProfile = () => {
           </div>
 
           <div className="flex gap-4 pt-6 mt-6 border-t border-gray-100">
-            {currentUser?.id === profileUser.id ? (
+            {String(currentUser?._id || currentUser?.id || '') === String(profileUser?._id || profileUser?.id || '') ? (
               <Link to="/complete-profile" className="btn-primary flex-1 text-center">{t('Edit Profile')}</Link>
             ) : (
               <a href={`tel:${profileUser.phone}`} className="btn-primary flex-1 text-center block">{t('Call ')}{profileUser.phone}</a>

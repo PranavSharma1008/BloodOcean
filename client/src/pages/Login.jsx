@@ -31,7 +31,7 @@ const Login = () => {
     <AuthLayout title={t('Welcome Back')} subtitle={t('Sign in to save lives')}>
       <form className="space-y-5" onSubmit={handleSubmit}>
         {error && (
-          <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3.5 rounded-xl text-sm font-medium flex items-center gap-2">
+          <div className="bg-red-50 dark:bg-red-950/60 border-2 border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 px-4 py-3.5 rounded-xl text-sm font-medium flex items-center gap-2">
             <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -41,7 +41,7 @@ const Login = () => {
 
         <div className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-slate-200 mb-1.5">
               {t('Email address')}
             </label>
             <input
@@ -50,14 +50,14 @@ const Login = () => {
               type="email"
               autoComplete="email"
               required
-              className="input-field"
-              placeholder={t('you@example.com')}
+              className="input-field dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-400"
+              placeholder=""
               value={formData.email}
               onChange={handleChange}
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1.5">
+            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-slate-200 mb-1.5">
               {t('Password')}
             </label>
             <div className="relative">
@@ -67,15 +67,15 @@ const Login = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="input-field pr-10"
-                placeholder={t('••••••••')}
+                className="input-field dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:placeholder-slate-400 pr-10"
+                placeholder=""
                 value={formData.password}
                 onChange={handleChange}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200"
               >
                 {showPassword ? (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -93,7 +93,7 @@ const Login = () => {
         </div>
 
         <div className="flex items-center justify-end">
-          <Link to="/forgot-password" className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors">
+          <Link to="/forgot-password" className="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
             {t('Forgot password?')}
           </Link>
         </div>
@@ -103,9 +103,9 @@ const Login = () => {
         </button>
 
         <div className="text-center pt-2">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-slate-400">
             {t("Don't have an account?")}{' '}
-            <Link to="/register" className="font-semibold text-red-600 hover:text-red-700 transition-colors">
+            <Link to="/register" className="font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
               {t('Sign up')}
             </Link>
           </p>

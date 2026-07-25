@@ -30,8 +30,14 @@ const EmergencyRequests = () => {
   const socketRef = useRef(null);
 
   useEffect(() => {
+    if (user?.bloodGroup && !filterBloodGroup) {
+      setFilterBloodGroup(user.bloodGroup);
+    }
+  }, [user]);
+
+  useEffect(() => {
     fetchEmergencyRequests();
-  }, []);
+  }, [filterBloodGroup]);
 
   useEffect(() => {
     if (!token || !user) return;
@@ -64,12 +70,7 @@ const EmergencyRequests = () => {
   const fetchEmergencyRequests = async () => {
     try {
       const params = {};
-      if (user?.bloodGroup) params.bloodGroup = user.bloodGroup;
-      if (user?.location?.coordinates && user.location.coordinates[0] !== 0 && user.location.coordinates[1] !== 0) {
-        params.lat = user.location.coordinates[1];
-        params.lng = user.location.coordinates[0];
-        params.radius = 100;
-      }
+      if (filterBloodGroup) params.bloodGroup = filterBloodGroup;
       const response = await api.get('/api/emergency', {
         params,
         headers: { Authorization: `Bearer ${token}` },
@@ -210,6 +211,15 @@ const EmergencyRequests = () => {
   };
 
   const filteredRequests = requests.filter((request) => {
+    const currentUserId = user?.id || user?._id;
+    const isRequester = String(request.requester?._id || request.requester) === String(currentUserId);
+    const matchesUserBloodGroup = !user?.bloodGroup || request.bloodGroup === user?.bloodGroup;
+
+    // Emergency requests should only be shown to members of the same blood group or the requester
+    if (!matchesUserBloodGroup && !isRequester) {
+      return false;
+    }
+
     const query = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !query ||
@@ -269,7 +279,7 @@ const EmergencyRequests = () => {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            {t('New Request')}
+            {t('Create Emergency Request')}
           </button>
         </div>
 
@@ -365,9 +375,6 @@ const EmergencyRequests = () => {
             <p className="text-gray-500 mt-1">
               {requests.length === 0 ? t('Be the first to post an emergency request') : t('Try different filters')}
             </p>
-            {requests.length === 0 && (
-              <button onClick={() => navigate('/create-emergency')} className="btn-primary mt-6">{t('Create Emergency Request')}</button>
-            )}
           </div>
         ) : (
           <div className="space-y-8">
@@ -405,8 +412,11 @@ const EmergencyRequests = () => {
                           )}
                           {request.notes && <p className="italic text-gray-500">"{request.notes}"</p>}
                           <p className="text-xs text-gray-400">{t('Posted by')} {request.requester?._id ? (
-                            <Link to={`/user/${request.requester._id}`} className="text-red-600 hover:underline font-medium">
+                            <Link to={`/user/${request.requester._id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline font-medium inline-flex items-center gap-0.5">
                               {request.requester.name}
+                              <svg className="w-3 h-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
                             </Link>
                           ) : (
                             <span>{request.requester?.name || t('Anonymous')}</span>
@@ -467,6 +477,10 @@ const EmergencyRequests = () => {
                               <span className="flex-1 text-center py-2.5 rounded-xl bg-yellow-100 text-yellow-700 text-sm font-bold">{t('Pending Approval')}</span>
                             ) : request.userResponse === 'declined' ? (
                               <span className="flex-1 text-center py-2.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-bold">{t('Declined')}</span>
+                            ) : user?.bloodGroup && user.bloodGroup !== request.bloodGroup ? (
+                              <div className="p-3 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold text-center">
+                                {t('Blood group mismatch. Only')} {request.bloodGroup} {t('donors can respond.')}
+                              </div>
                             ) : (
                               <div className="flex gap-2">
                                 <button onClick={() => handleRespond(request._id, 'accepted')}

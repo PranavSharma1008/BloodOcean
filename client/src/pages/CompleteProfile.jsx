@@ -34,6 +34,7 @@ const CompleteProfile = () => {
 
   useEffect(() => {
     if (user) {
+      const diseaseStr = typeof user.disease === 'string' ? user.disease : '';
       setFormData({
         name: user.name || '',
         phone: user.phone || '',
@@ -45,8 +46,8 @@ const CompleteProfile = () => {
         age: user.age || '',
         gender: user.gender || '',
         religion: user.religion || '',
-        disease: user.disease || '',
-        hasDisease: !!(user.disease && user.disease.trim() !== ''),
+        disease: diseaseStr,
+        hasDisease: !!(diseaseStr && diseaseStr.trim() !== ''),
         unitsCanDonate: user.unitsCanDonate || 1,
         bloodCharges: user.bloodCharges || 0,
         freeBlood: !user.bloodCharges || user.bloodCharges === 0,
@@ -309,14 +310,14 @@ const CompleteProfile = () => {
               </div>
             )}
 
-            <label className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${formData.disease && formData.disease.trim() !== '' ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-70' : 'bg-gray-50 border-gray-200 hover:border-red-200 cursor-pointer'}`}>
+            <label className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${typeof formData.disease === 'string' && formData.disease.trim() !== '' ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-70' : 'bg-gray-50 border-gray-200 hover:border-red-200 cursor-pointer'}`}>
               <input type="checkbox" id="available" name="available" checked={formData.available} onChange={handleChange}
-                disabled={formData.disease && formData.disease.trim() !== ''}
+                disabled={typeof formData.disease === 'string' && formData.disease.trim() !== ''}
                 className="w-5 h-5 text-red-600 focus:ring-red-500 border-gray-300 rounded" />
               <div>
                 <span className="text-sm font-semibold text-gray-900">{t('I am available to donate blood')}</span>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {formData.disease && formData.disease.trim() !== '' ? t('You cannot donate due to medical condition') : t("Toggle this when you're ready to donate")}
+                  {typeof formData.disease === 'string' && formData.disease.trim() !== '' ? t('You cannot donate due to medical condition') : t("Toggle this when you're ready to donate")}
                 </p>
               </div>
             </label>

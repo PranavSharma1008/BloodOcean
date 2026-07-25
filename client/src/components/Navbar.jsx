@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getTranslatedName } from '../utils/nameTranslator';
 import translations from '../i18n/translations';
 import NotificationPanel from './NotificationPanel';
 import ThemeToggle from './ThemeToggle';
@@ -396,6 +397,8 @@ const Navbar = () => {
                   <ThemeToggle />
                   <Link
                     to={`/user/${user._id || user.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 pl-1.5 pr-4 py-1 text-sm text-white h-9 whitespace-nowrap transition-all duration-200 shadow-sm hover:scale-[1.03] active:scale-[0.97]"
                     title={t('View Profile')}
                   >
@@ -407,7 +410,7 @@ const Navbar = () => {
                       </span>
                     )}
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-                    <span className="truncate max-w-[140px] font-semibold">{user.name}</span>
+                    <span className="truncate max-w-[140px] font-semibold">{getTranslatedName(user.name, lang)}</span>
                   </Link>
                   <NotificationPanel />
                   <button
@@ -478,6 +481,8 @@ const Navbar = () => {
             <div className="px-4 py-4 space-y-1">
               <Link
                 to={`/user/${user._id || user.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 p-3 mb-3 rounded-2xl bg-white/15 border border-white/20 text-white font-semibold shadow-sm active:scale-95 transition-all"
               >
@@ -489,7 +494,7 @@ const Navbar = () => {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm truncate">{user.name}</div>
+                  <div className="font-bold text-sm truncate">{getTranslatedName(user.name, lang)}</div>
                   <div className="text-xs text-red-100 flex items-center gap-1.5 mt-0.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>View & Edit Profile</span>

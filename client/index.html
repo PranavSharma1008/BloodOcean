@@ -23,22 +23,92 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
-    <title>BloodOcean - Find Blood Donors, Save Lives | Blood Donation Platform</title>
+    <title>BloodOcean - Find Blood Donors & Donation Camps | Save Lives</title>
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "BloodOcean",
-      "url": "https://bloodocean.com",
-      "description": "Blood donation platform connecting donors with people in need of emergency blood.",
-      "applicationCategory": "HealthApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "INR"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "MedicalOrganization",
+        "name": "BloodOcean",
+        "url": "https://bloodocean.com",
+        "logo": "https://bloodocean.com/logo.png",
+        "description": "BloodOcean is a real-time blood donation and camp discovery network connecting blood donors, emergency patients, and blood donation camps across India.",
+        "medicalSpecialty": "TransfusionMedicine",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+91-1800-BLOOD-HELP",
+          "contactType": "Emergency Blood Support Line",
+          "areaServed": "IN",
+          "availableLanguage": ["English", "Hindi"]
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Who can donate blood at a blood donation camp?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Healthy individuals aged 18 to 65 years, weighing at least 45 kg, with a hemoglobin level of 12.5 g/dL or higher, and who have not donated blood in the last 3 months (90 days for males, 120 days for females) are eligible."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How to find blood donation camps near me?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can find nearby blood donation camps on BloodOcean by using the Camps search feature, filtering by State, District, and City to view active and upcoming blood drives."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I register or organize a blood donation camp?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Log in to BloodOcean, navigate to the Camps section, click 'New Camp', and fill in the venue, date, organizer details, contact number, and notification radius to notify registered nearby donors automatically."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What precautions should be taken before blood donation?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Drink plenty of fluids (water or juices), eat a healthy meal avoiding high-fat foods, avoid alcohol 24 hours prior, get a good night's sleep, and bring a valid photo ID."
+            }
+          }
+        ]
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to Donate Blood at a Local Blood Camp",
+        "description": "Step-by-step guide to participating in a voluntary blood donation drive.",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Locate a Camp",
+            "text": "Find an upcoming blood donation camp in your city on BloodOcean."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Pre-Donation Check",
+            "text": "Get your hemoglobin levels, blood pressure, and weight screened at the donor registration desk."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Blood Donation",
+            "text": "A sterile blood collection process taking 8-10 minutes performed by accredited medical staff."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Refreshment & Recovery",
+            "text": "Rest for 10-15 minutes, enjoy refreshments, and collect your Donor Certificate."
+          }
+        ]
       }
-    }
+    ]
     </script>
   </head>
   <body>

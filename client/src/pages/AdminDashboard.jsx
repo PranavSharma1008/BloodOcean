@@ -367,7 +367,7 @@ const AdminDashboard = () => {
                   {users.map((userItem) => (
                     <tr key={userItem._id} className="hover:bg-red-50/30 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        <Link to={`/user/${userItem._id}`} className="text-red-600 hover:underline">{userItem.name}</Link>
+                        <Link to={`/user/${userItem._id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">{userItem.name}</Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{userItem.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -478,10 +478,10 @@ const AdminDashboard = () => {
                   {bloodRequests.map((req) => (
                     <tr key={req._id} className="hover:bg-red-50/30 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        <Link to={`/user/${req.requester?._id}`} className="text-red-600 hover:underline">{req.requester?.name || t('Unknown')}</Link>
+                        <Link to={`/user/${req.requester?._id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">{req.requester?.name || t('Unknown')}</Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        <Link to={`/user/${req.donor?._id}`} className="text-red-600 hover:underline">{req.donor?.name || t('Unknown')}</Link>
+                        <Link to={`/user/${req.donor?._id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">{req.donor?.name || t('Unknown')}</Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700">
@@ -537,7 +537,7 @@ const AdminDashboard = () => {
                   {donations.map((donation) => (
                     <tr key={donation._id} className="hover:bg-red-50/30 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        <Link to={`/user/${donation.donor?._id}`} className="text-red-600 hover:underline">{donation.donor?.name || t('Unknown')}</Link>
+                        <Link to={`/user/${donation.donor?._id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">{donation.donor?.name || t('Unknown')}</Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700">
@@ -624,7 +624,7 @@ const AdminDashboard = () => {
                   {notifications.map((notif) => (
                     <tr key={notif._id} className="hover:bg-red-50/30 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                        <Link to={`/user/${notif.donorId?._id}`} className="text-red-600 hover:underline">{notif.donorId?.name || t('Unknown')}</Link>
+                        <Link to={`/user/${notif.donorId?._id}`} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">{notif.donorId?.name || t('Unknown')}</Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-700">

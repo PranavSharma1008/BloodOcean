@@ -35,6 +35,15 @@ const donationSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  image: {
+    type: String,
+    default: '',
+  },
+  memoryStory: {
+    type: String,
+    trim: true,
+    default: '',
+  },
   requestId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'EmergencyRequest',

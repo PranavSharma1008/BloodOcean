@@ -48,11 +48,14 @@ const createBloodRequest = async (req, res) => {
       requesterLocation,
     });
 
+    const donorMsg = `🩸 Urgent Blood Request! ${req.user.name || 'A user'} needs ${bloodGroup} blood at ${hospital}. Contact: ${contactNumber}`;
+
     await Notification.create({
       donorId: donorId,
       bloodRequestId: bloodRequest._id,
+      relatedUserId: req.user.id,
       type: 'donor_request',
-      message: `You have a new blood request for ${bloodGroup} from ${req.user.name || 'a user'}. Hospital: ${hospital}`,
+      message: donorMsg,
       status: 'unread',
       actionTaken: 'pending',
     });
@@ -60,11 +63,38 @@ const createBloodRequest = async (req, res) => {
     await Notification.create({
       donorId: req.user.id,
       bloodRequestId: bloodRequest._id,
+      relatedUserId: donorId,
       type: 'blood_request_update',
-      message: `Blood request sent to ${donor.name} for ${bloodGroup}.`,
+      message: `Blood request sent to ${donor.name} for ${bloodGroup} at ${hospital}.`,
       status: 'unread',
       actionTaken: 'pending',
     });
+
+    // Real-time socket notification push
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user:${donorId}`).emit('new_notification', {
+        type: 'donor_request',
+        message: donorMsg,
+        bloodRequestId: bloodRequest._id,
+        relatedUserId: req.user.id,
+      });
+      io.to(`user:${req.user.id}`).emit('new_notification');
+    }
+
+    // Optional email notification
+    try {
+      const sendEmail = require('../utils/sendEmail');
+      if (donor.email) {
+        await sendEmail({
+          to: donor.email,
+          subject: `🚨 Urgent Blood Request (${bloodGroup}) - BloodOcean`,
+          text: `Hello ${donor.name},\n\n${req.user.name || 'A user'} urgently needs ${bloodGroup} blood at ${hospital}.\n\nContact Number: ${contactNumber}\nNotes: ${notes || 'None'}\n\nPlease log in to BloodOcean to view the location and accept this request!\n\nBloodOcean Team`,
+        });
+      }
+    } catch (emailErr) {
+      console.warn('Failed to send blood request notification email:', emailErr.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -159,6 +189,12 @@ const acceptBloodRequest = async (req, res) => {
       donorId: String(bloodRequest.donor),
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user:${bloodRequest.requester}`).emit('new_notification');
+      io.to(`user:${bloodRequest.donor}`).emit('new_notification');
+    }
+
     res.status(200).json({
       success: true,
       message: 'Blood request accepted',
@@ -199,6 +235,11 @@ const declineBloodRequest = async (req, res) => {
       status: 'unread',
       actionTaken: 'declined',
     });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user:${bloodRequest.requester}`).emit('new_notification');
+    }
 
     res.status(200).json({
       success: true,

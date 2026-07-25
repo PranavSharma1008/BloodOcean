@@ -107,11 +107,14 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ message: 'Please provide an email' });
     }
 
-    const user = await User.findOne({ email }).select('+resetPasswordToken');
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail }).select('+resetPasswordToken');
+    
+    // Strict existence check: If user does not exist, ask them to sign up first
     if (!user) {
-      return res.status(200).json({
-        success: true,
-        message: 'If an account exists with that email, a reset code has been sent.',
+      return res.status(404).json({
+        success: false,
+        message: 'You do not have an account yet. Please sign up and create an account first.',
       });
     }
 
@@ -129,10 +132,10 @@ const forgotPassword = async (req, res) => {
     );
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[DEV] Password reset OTP for ${email}: ${otp}`);
+      console.log(`[DEV] Password reset OTP for ${normalizedEmail}: ${otp}`);
     }
 
-    const message = `Your password reset code is: ${otp}\n\nThis code will expire in 15 minutes.`;
+    const message = `Your password reset code is: ${otp}\n\nThis code will expire in 15 minutes. Check your SPAM / Junk folder if not found in Inbox.`;
 
     try {
       const sendResult = await sendEmail({
@@ -181,7 +184,7 @@ const forgotPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'If an account exists with that email, a reset code has been sent.',
+      message: 'Check in your SPAM folder.',
     });
   } catch (error) {
     console.error('[EMAIL] forgotPassword error:', error);
@@ -199,15 +202,25 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Email, code, and new password are required' });
     }
 
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const normalizedEmail = email.toLowerCase().trim();
+    const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+    // Strict Security Verification: Must match exact target email and active reset token
     const user = await User.findOne({
-      email,
+      email: normalizedEmail,
       resetPasswordToken: tokenHash,
       resetPasswordExpire: { $gt: Date.now() },
-    }).select('+resetPasswordToken +password');
+    }).select('+resetPasswordToken +resetPasswordExpire +password');
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired reset code' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Security Violation: Invalid or expired reset code for this email address.' 
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
 
     user.password = password;

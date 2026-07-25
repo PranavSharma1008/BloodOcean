@@ -46,9 +46,13 @@ const searchNearbyDonors = async (req, res) => {
         query.name = { $regex: name.trim(), $options: 'i' };
       }
 
+      const userIdStr = String(req.user.id || req.user._id);
+
       let donors = await User.find(query).select(
         'name bloodGroup phone city state district location available'
       );
+
+      donors = donors.filter(d => String(d._id) !== userIdStr);
 
       donors = donors
         .map((donor) => {
@@ -110,6 +114,8 @@ const searchNearbyDonors = async (req, res) => {
         return res.status(400).json({ message: 'Invalid radius. Must be 5, 10, 20, or 100 km' });
       }
 
+      const userIdStr = String(req.user.id || req.user._id);
+
       const query = {
         _id: { $ne: req.user.id },
         bloodGroup,
@@ -132,6 +138,8 @@ const searchNearbyDonors = async (req, res) => {
       let donors = await User.find(query).select(
         'name bloodGroup phone city state district location available'
       );
+
+      donors = donors.filter(d => String(d._id) !== userIdStr);
 
       if (hasGps) {
         donors = donors

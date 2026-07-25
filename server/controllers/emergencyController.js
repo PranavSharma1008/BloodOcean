@@ -33,10 +33,14 @@ const createEmergencyRequest = async (req, res) => {
     // Validate expiresAt if provided
     let requestExpiresAt;
     if (expiresAt) {
-      requestExpiresAt = new Date(expiresAt);
-      if (isNaN(requestExpiresAt.getTime()) || requestExpiresAt <= new Date()) {
-        return res.status(400).json({ message: 'Expiry must be a valid future date/time' });
+      const parsed = new Date(expiresAt);
+      if (!isNaN(parsed.getTime()) && parsed > new Date()) {
+        requestExpiresAt = parsed;
+      } else {
+        requestExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       }
+    } else {
+      requestExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     }
 
     // Get user's location if not provided
@@ -139,8 +143,16 @@ const getEmergencyRequests = async (req, res) => {
 
     const { bloodGroup, lat, lng, radius } = req.query;
 
+    const currentUser = await User.findById(req.user.id);
+
     if (bloodGroup) {
       query.bloodGroup = bloodGroup;
+    } else if (currentUser && currentUser.role !== 'admin' && currentUser.bloodGroup) {
+      // Only show emergency requests that match user's blood group or were created by the user
+      query.$or = [
+        { bloodGroup: currentUser.bloodGroup },
+        { requester: req.user.id },
+      ];
     }
 
     if (lat && lng) {
@@ -302,6 +314,13 @@ const respondToRequest = async (req, res) => {
     }
 
     const donor = await User.findById(req.user.id).select('name phone bloodGroup unitsCanDonate bloodCharges city state district location avatar age gender religion');
+
+    if ((status === 'accepted' || status === 'pending') && donor?.bloodGroup !== emergencyRequest.bloodGroup) {
+      return res.status(400).json({
+        message: `Your blood group (${donor?.bloodGroup || 'Not specified'}) does not match the requested blood group (${emergencyRequest.bloodGroup}). Only ${emergencyRequest.bloodGroup} donors can respond.`
+      });
+    }
+
     const donorUnits = donor?.unitsCanDonate || 1;
     const remainingNeeded = emergencyRequest.unitsNeeded - emergencyRequest.unitsFulfilled;
 

@@ -4,9 +4,9 @@ import { cn } from './lib/utils';
 
 const TextScrollMarquee = ({
   children,
-  baseVelocity = 10,
+  baseVelocity = 25,
   className,
-  delay = 0,
+  delay = 300,
 }) => {
   const [started, setStarted] = useState(false);
 
@@ -16,19 +16,25 @@ const TextScrollMarquee = ({
   }, [delay]);
 
   return (
-    <div className="overflow-hidden whitespace-nowrap flex flex-nowrap">
-      <motion.span
-        className={cn('block text-[5vw]', className)}
-        initial={{ x: '0%' }}
-        animate={started ? { x: ['0%', '100%'] } : {}}
+    <div className="overflow-hidden whitespace-nowrap flex w-full relative select-none py-1">
+      <motion.div
+        className={cn('inline-flex items-center gap-6 whitespace-nowrap', className)}
+        animate={started ? { x: ['-50%', '0%'] } : {}}
         transition={{
           duration: baseVelocity,
           ease: 'linear',
           repeat: Infinity,
         }}
       >
-        {children}
-      </motion.span>
+        <span className="inline-block">{children}</span>
+        <span className="opacity-60 text-xs">•</span>
+        <span className="inline-block">{children}</span>
+        <span className="opacity-60 text-xs">•</span>
+        <span className="inline-block">{children}</span>
+        <span className="opacity-60 text-xs">•</span>
+        <span className="inline-block">{children}</span>
+        <span className="opacity-60 text-xs">•</span>
+      </motion.div>
     </div>
   );
 };

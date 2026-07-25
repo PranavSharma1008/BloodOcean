@@ -31,11 +31,19 @@ function AppContent() {
   const { loading } = useAuth();
   useLocationTracker();
   const [splashDone, setSplashDone] = useState(() => {
-    return sessionStorage.getItem('splashSeen') === 'true';
+    const path = window.location.pathname;
+    if (path.startsWith('/user/') || path.startsWith('/complete-profile')) {
+      return true;
+    }
+    return (
+      localStorage.getItem('splashSeen') === 'true' ||
+      sessionStorage.getItem('splashSeen') === 'true'
+    );
   });
 
   const handleSplashComplete = useCallback(() => {
     sessionStorage.setItem('splashSeen', 'true');
+    localStorage.setItem('splashSeen', 'true');
     setSplashDone(true);
   }, []);
 

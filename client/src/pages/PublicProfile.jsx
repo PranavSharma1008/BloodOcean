@@ -152,6 +152,14 @@ const PublicProfile = () => {
             )}
           </div>
 
+          {/* PRIVACY ASSURANCE NOTE */}
+          <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600 flex items-center gap-3">
+            <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>{t('🔒 Donation History & Memories are private to each account and cannot be viewed by other users.')}</span>
+          </div>
+
           <div className="flex gap-4 pt-6 mt-6 border-t border-gray-100">
             {String(currentUser?._id || currentUser?.id || '') === String(profileUser?._id || profileUser?.id || '') ? (
               <Link to="/complete-profile" className="btn-primary flex-1 text-center">{t('Edit Profile')}</Link>

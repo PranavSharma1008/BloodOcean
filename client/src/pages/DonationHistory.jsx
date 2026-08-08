@@ -215,6 +215,20 @@ const DonationHistory = () => {
           </button>
         </div>
 
+        {/* PRIVACY NOTICE BADGE */}
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-200 text-xs sm:text-sm font-semibold shadow-sm">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0 text-emerald-600 dark:text-emerald-400">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div>
+            <span className="font-bold block text-emerald-900 dark:text-emerald-100">{t('🔒 Private & Confidential Account Record')}</span>
+            <span className="text-emerald-700 dark:text-emerald-300 font-normal">{t('Your donation history, memory photos, and personal stories are strictly private to your account. Other users cannot see your donation records.')}</span>
+          </div>
+        </div>
+
+
         {/* DONOR BADGE CARD */}
         {badge && (
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 dark:border-slate-700/80 overflow-hidden relative">

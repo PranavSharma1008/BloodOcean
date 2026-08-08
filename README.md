@@ -1,227 +1,339 @@
-# BloodOcean
+# 🩸 BloodOcean
 
-A web application to connect blood donors with those in need.
+<p align="center">
+  <img src="./logo.png" alt="BloodOcean Logo" width="160" />
+</p>
 
-**Live Frontend:** [https://bloodocean.vercel.app](https://bloodocean.vercel.app)
+<h3 align="center">Lifesaving Emergency Blood Donation & Real-Time Geolocation Platform</h3>
 
-![BloodOcean Dashboard](./dashboard-screenshot.png)
+<p align="center">
+  <b>Connecting emergency blood seekers with verified nearby donors in real-time.</b>
+</p>
 
-## Tech Stack
+<p align="center">
+  <a href="https://bloodocean.vercel.app"><img src="https://img.shields.io/badge/Live%20Demo-bloodocean.vercel.app-DC2626?style=for-the-badge&logo=vercel" alt="Live Demo" /></a>
+  <img src="https://img.shields.io/badge/License-ISC-blue?style=for-the-badge" alt="License" />
+  <img src="https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite%20%7C%20Tailwind-61DAFB?style=for-the-badge&logo=react" alt="Frontend" />
+  <img src="https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?style=for-the-badge&logo=nodedotjs" alt="Backend" />
+  <img src="https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb" alt="Database" />
+</p>
 
-- **Frontend**: React.js, Tailwind CSS, React Router
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB Atlas
-- **Authentication**: JWT (JSON Web Tokens), bcrypt
-- **Architecture**: MVC (Model-View-Controller)
+---
 
-## Project Structure
+## 📌 Links & Resources
+
+- 🌐 **Live Web Application:** [https://bloodocean.vercel.app](https://bloodocean.vercel.app)
+- 📖 **API Documentation:** [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
+- 🚀 **Deployment Guide:** [DEPLOYMENT.md](./DEPLOYMENT.md)
+- 📋 **Project Context & Architecture:** [PROJECT_CONTEXT.md](./PROJECT_CONTEXT.md)
+
+---
+
+## 📖 Overview
+
+**BloodOcean** is a full-stack, responsive web application engineered to bridge the critical gap between blood donors and patients requiring emergency blood transfusions. By utilizing high-precision geospatial indexing (`2dsphere` on MongoDB Atlas) and the native browser Geolocation API, BloodOcean enables real-time proximity-based donor matching, emergency request broadcasting, interactive map navigation, live tracking, and blood camp management.
+
+---
+
+## ✨ Key Features
+
+### 📍 Proximity-Based Donor Search
+- **Haversine Proximity Search:** Find compatible donors within configurable radii (5 km, 10 km, 20 km, 50 km).
+- **Geospatial Indexing:** Driven by MongoDB `GeoJSON Point` data and `$nearSphere` queries for ultra-fast location matching.
+- **Filter by Compatibility:** Instant filtering by exact blood group compatibility (`A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+`, `O-`) and availability status.
+
+### 🚨 Emergency Request Broadcast
+- **Create Urgent Requests:** Post emergency blood requirements with patient details, hospital location, required blood units, and contact information.
+- **Request Lifecycle Management:** Track request state dynamically (`Active`, `Fulfilled`, `Cancelled`).
+- **Interactive Emergency Maps:** Pinpoint request locations on interactive Leaflet maps with live navigation links.
+
+### 🗺️ Live Tracking & Interactive Maps
+- **Leaflet & OpenStreetMap Integration:** Visual map view of active emergency requests, nearby available donors, and blood camps.
+- **Real-Time Tracking:** Live route visualization and proximity updates between donor and recipient.
+
+### 🏥 Blood Donation Camps
+- **Camp Discovery:** Find upcoming community blood donation drives and camps nearby.
+- **Camp Location Maps:** Interactive map markers detailing camp schedules, venue addresses, and organizers.
+
+### 🏆 Donation History & Achievements
+- **Track Impact:** Record past blood donations, calculate lives saved, and track donation frequency.
+- **Achievement Badges:** Unlock gamified milestones and donor badges for continuous community contributions.
+
+### 🔔 Real-Time Notifications
+- **Instant Alerts:** WebSockets (Socket.io) ready notification pipeline alerting nearby compatible donors when an emergency request is created.
+- **In-App Notification Center:** Unread badge counts, quick mark-as-read, and detailed request action buttons.
+
+### 🌐 Multi-Language (i18n) & Dark Mode UI
+- **Internationalization:** Multi-language support (English, Hindi, and regional languages) managed via React Context.
+- **Theme Switching:** Sleek dark mode and high-contrast light mode with Tailwind CSS.
+- **Animated Splash Screen & Loaders:** Smooth UI animations powered by GSAP and Framer Motion.
+
+### 🛡️ Admin Dashboard & Governance
+- **Platform Analytics:** Real-time metrics on total donors, blood group distribution, active emergency requests, and fulfilled cases.
+- **User & Request Control:** Elevate user roles, manage profiles, remove non-compliant accounts, and monitor network health.
+
+---
+
+## 🛠️ Tech Stack
+
+### **Frontend**
+| Technology | Description |
+| :--- | :--- |
+| **React 18** | UI framework with Hooks and Context API |
+| **Vite** | Next-generation frontend build tool |
+| **Tailwind CSS 3** | Utility-first CSS styling framework |
+| **Leaflet & React-Leaflet** | Interactive vector map rendering & markers |
+| **Framer Motion & GSAP** | High-performance visual UI animations |
+| **Lucide React** | Modern icon set |
+| **Axios** | HTTP client for REST API communication |
+
+### **Backend**
+| Technology | Description |
+| :--- | :--- |
+| **Node.js** | Server side JavaScript runtime |
+| **Express.js** | Lightweight Web API framework |
+| **MongoDB Atlas** | Cloud NoSQL database with geospatial `2dsphere` index |
+| **Mongoose** | Elegant object modeling for MongoDB |
+| **JWT & BcryptJS** | Secure stateless authentication & password hashing |
+| **Socket.io** | WebSockets engine for real-time notifications |
+| **Helmet & CORS** | HTTP security headers & Cross-Origin Resource Sharing |
+| **Nodemailer** | Automated transactional email notifications |
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client ["Client Layer (React + Vite)"]
+        UI[Tailwind CSS & Framer Motion UI]
+        Maps[Leaflet Map Component]
+        Context[Auth / Theme / i18n Context]
+    end
+
+    subgraph API ["Server Layer (Express.js REST API)"]
+        AuthMiddleware[JWT Auth Middleware]
+        Controllers[Auth / Profile / Search / Emergency Controllers]
+        WS[Socket.io Real-Time Engine]
+    end
+
+    subgraph Database ["Data Layer (MongoDB Atlas)"]
+        UserCol[(Users Collection + 2dsphere Index)]
+        ReqCol[(Emergency Requests Collection)]
+        CampCol[(Donation Camps Collection)]
+    end
+
+    UI -->|HTTP Requests| Controllers
+    UI -->|Socket Events| WS
+    Controllers --> AuthMiddleware
+    Controllers -->|Mongoose Queries| UserCol
+    Controllers -->|Mongoose Queries| ReqCol
+    Controllers -->|Mongoose Queries| CampCol
+    Maps -->|GeoJSON Coordinates| Controllers
+```
+
+---
+
+## 📁 Project Directory Structure
 
 ```
-bloody/
-├── client/                 # React frontend
+BloodOcean/
+├── client/                     # React + Vite Frontend
+│   ├── public/                 # Static assets & favicon
 │   ├── src/
-│   │   ├── components/    # Reusable components (Navbar, ProtectedRoute)
-│   │   ├── context/       # React Context (AuthContext)
-│   │   ├── pages/         # Page components (Login, Register, Dashboard)
-│   │   ├── App.jsx        # Main app component
-│   │   ├── main.jsx       # Entry point
-│   │   └── index.css      # Global styles with Tailwind
-│   ├── index.html         # HTML template
-│   ├── package.json       # Frontend dependencies
-│   ├── vite.config.js     # Vite configuration
-│   ├── tailwind.config.js # Tailwind CSS configuration
-│   └── postcss.config.js  # PostCSS configuration
-├── server/                # Express backend
-│   ├── config/            # Configuration files (database)
-│   ├── controllers/       # Route controllers (authController)
-│   ├── middleware/        # Custom middleware (auth)
-│   ├── models/            # Mongoose models (User)
-│   ├── routes/            # API routes (auth)
-│   ├── server.js          # Express server entry point
-│   ├── package.json       # Backend dependencies
-│   └── .env.example       # Environment variables template
-├── API_DOCUMENTATION.md   # API endpoint documentation
-└── README.md             # This file
+│   │   ├── api/               # Axios API configuration & endpoints
+│   │   ├── components/        # Navbar, ProtectedRoute, SplashScreen, MagicLoader
+│   │   ├── context/           # AuthContext, ThemeContext, LanguageContext
+│   │   ├── hooks/             # Custom hooks (useLocationTracker, etc.)
+│   │   ├── i18n/              # Translation resources
+│   │   ├── pages/             # Page Views
+│   │   │   ├── AdminDashboard.jsx
+│   │   │   ├── BloodRequestMap.jsx
+│   │   │   ├── CampLocationMap.jsx
+│   │   │   ├── Camps.jsx
+│   │   │   ├── CompleteProfile.jsx
+│   │   │   ├── CreateEmergency.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── DonationHistory.jsx
+│   │   │   ├── EmergencyRequests.jsx
+│   │   │   ├── LiveTracking.jsx
+│   │   │   ├── Location.jsx
+│   │   │   ├── Login.jsx & Register.jsx
+│   │   │   ├── MapPage.jsx
+│   │   │   ├── PublicProfile.jsx
+│   │   │   └── Search.jsx
+│   │   ├── App.jsx            # Routing & Application Shell
+│   │   ├── index.css          # Tailwind CSS directives & global themes
+│   │   └── main.jsx           # React DOM entry point
+│   ├── package.json
+│   └── vite.config.js
+│
+├── server/                     # Express.js Backend API
+│   ├── config/                # Database connection (db.js)
+│   ├── controllers/           # Business logic (auth, profile, search, emergency, admin, etc.)
+│   ├── middleware/            # JWT verification & admin guard middleware
+│   ├── models/                # Mongoose schemas (User, EmergencyRequest, Camp, Notification)
+│   ├── routes/                # Express API routes
+│   ├── scripts/               # Helper scripts (free-port.js)
+│   ├── .env.example           # Environment template
+│   ├── package.json
+│   └── server.js              # Entry point & Express server bootstrap
+│
+├── API_DOCUMENTATION.md        # Comprehensive REST API reference
+├── DEPLOYMENT.md               # Production deployment step-by-step guide
+├── PROJECT_CONTEXT.md          # Architecture & data schema specifications
+├── render.yaml                 # Render backend deployment manifest
+└── README.md                   # Project README
 ```
 
-## Prerequisites
+---
 
-- Node.js (v16 or higher)
-- npm or yarn
-- MongoDB Atlas account (for cloud database)
-- Git (optional)
+## ⚡ Quick Start Guide
 
-## Setup Instructions
+### Prerequisites
+- **Node.js**: `v16.x` or higher installed
+- **npm**: `v8.x` or higher installed
+- **MongoDB Atlas**: An active cluster connection string (or local MongoDB v5+)
 
-### 1. Clone the Repository
+---
+
+### 1. Clone Repository
 
 ```bash
-git clone <repository-url>
-cd bloody
+git clone https://github.com/SharmaPranav1008/BloodOcean.git
+cd BloodOcean
 ```
+
+---
 
 ### 2. Backend Setup
 
-#### 2.1 Navigate to server directory
-```bash
-cd server
-```
+1. **Navigate to server directory:**
+   ```bash
+   cd server
+   ```
 
-#### 2.2 Install dependencies
-```bash
-npm install
-```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-#### 2.3 Configure environment variables
-```bash
-cp .env.example .env
-```
+3. **Configure Environment Variables:**
+   Copy the `.env.example` file to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
 
-Edit the `.env` file with your MongoDB Atlas connection string:
+   Fill in your parameters inside `server/.env`:
+   ```env
+   PORT=5000
+   MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/bloodocean?retryWrites=true&w=majority
+   JWT_SECRET=your_super_secret_jwt_key_here
+   JWT_EXPIRE=7d
+   NODE_ENV=development
+   CLIENT_URL=http://localhost:3000
+   ```
 
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/blood-donation-finder?retryWrites=true&w=majority
-JWT_SECRET=your_jwt_secret_key_here_change_this_in_production
-JWT_EXPIRE=7d
-NODE_ENV=development
-```
+4. **Start the backend development server:**
+   ```bash
+   npm run dev
+   ```
+   > The Express server runs at `http://localhost:5000`.
 
-**Note**: Replace `<username>` and `<password>` with your MongoDB Atlas credentials. Generate a strong JWT_SECRET for production.
-
-#### 2.4 Start the backend server
-```bash
-npm run dev
-```
-
-The backend will run on `http://localhost:5000`
+---
 
 ### 3. Frontend Setup
 
-#### 3.1 Navigate to client directory (from project root)
-```bash
-cd client
-```
+1. **Open a new terminal and navigate to client directory:**
+   ```bash
+   cd client
+   ```
 
-#### 3.2 Install dependencies
-```bash
-npm install
-```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-#### 3.3 Start the frontend development server
-```bash
-npm run dev
-```
+3. **Configure Frontend Environment:**
+   Create a `.env` file inside `client/`:
+   ```env
+   VITE_API_URL=http://localhost:5000/api
+   ```
 
-The frontend will run on `http://localhost:3000`
+4. **Start Vite development server:**
+   ```bash
+   npm run dev
+   ```
+   > The React app will run at `http://localhost:3000`.
 
-### 4. Running the Application
+---
 
-Start both servers in separate terminals:
+## 🔑 Environment Variables Reference
 
-**Terminal 1 (Backend):**
-```bash
-cd server
-npm run dev
-```
+### **Server Environment (`server/.env`)**
 
-**Terminal 2 (Frontend):**
-```bash
-cd client
-npm run dev
-```
+| Variable | Description | Required | Default |
+| :--- | :--- | :---: | :--- |
+| `PORT` | HTTP Server Port | Yes | `5000` |
+| `MONGODB_URI` | MongoDB Atlas Connection String | Yes | - |
+| `JWT_SECRET` | Secret key for signing authentication tokens | Yes | - |
+| `JWT_EXPIRE` | Expiration lifespan of JWT token | No | `7d` |
+| `NODE_ENV` | Environment mode (`development` / `production`) | No | `development` |
+| `CLIENT_URL` | Allowed CORS origin | No | `http://localhost:3000` |
 
-Access the application at `http://localhost:3000`
+---
 
-## Features (Phase 1)
+## 📡 API Endpoint Overview
 
-- **User Registration**: Create new user accounts with email and password
-- **User Login**: Authenticate users with JWT tokens
-- **Protected Routes**: Dashboard accessible only to authenticated users
-- **Role-Based Access**: User and Admin roles (for future expansion)
-- **Responsive Design**: Mobile-friendly UI with Tailwind CSS
-- **Password Security**: Password hashing with bcrypt
+All API endpoints are prefixed with `/api`. For full request/response schemas, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.md).
 
-## API Endpoints
+| Category | Method | Endpoint | Access | Description |
+| :--- | :---: | :--- | :---: | :--- |
+| **Auth** | `POST` | `/api/auth/register` | Public | Register new user account |
+| **Auth** | `POST` | `/api/auth/login` | Public | Login & receive JWT |
+| **Auth** | `GET` | `/api/auth/me` | Private | Get authenticated user info |
+| **Profile** | `GET` | `/api/profile` | Private | Get detailed user profile |
+| **Profile** | `PUT` | `/api/profile` | Private | Update profile & donor status |
+| **Location**| `PUT` | `/api/users/location` | Private | Update GeoJSON coordinates |
+| **Search** | `GET` | `/api/donors/nearby` | Private | Geospatial search by radius & blood group |
+| **Emergency**| `POST` | `/api/emergency` | Private | Create emergency blood request |
+| **Emergency**| `GET` | `/api/emergency` | Private | Fetch active emergency requests |
+| **Emergency**| `PUT` | `/api/emergency/:id` | Private | Update request status (`fulfilled`/`cancelled`) |
+| **Camps** | `GET` | `/api/camps` | Private | Get list of blood donation camps |
+| **Admin** | `GET` | `/api/admin/statistics` | Admin | Fetch system analytics & metrics |
+| **Admin** | `GET` | `/api/admin/users` | Admin | Manage & view all platform users |
 
-See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for detailed API documentation.
+---
 
-### Authentication Endpoints
+## 🚀 Deployment
 
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user (protected)
+BloodOcean is configured for seamless zero-downtime continuous deployment:
 
-## Future Phases
+- **Backend API:** Configured for [Render](https://render.com) using [`render.yaml`](./render.yaml).
+- **Frontend App:** Optimized for production deployment on [Vercel](https://vercel.com).
 
-The application is designed to be easily extended with future features:
+For step-by-step production deployment instructions, check out [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-- **Phase 2**: Donor profiles, blood type management
-- **Phase 3**: Geolocation-based donor search
-- **Phase 4**: Emergency blood donation requests
-- **Phase 5**: Admin dashboard with user management
-- **Phase 6**: Donation history and notifications
+---
 
-## Database Schema
+## 🔒 Security Best Practices
 
-### User Model
-```javascript
-{
-  _id: ObjectId,
-  name: String (required),
-  email: String (required, unique),
-  password: String (required, hashed),
-  role: String (enum: ['user', 'admin'], default: 'user'),
-  createdAt: Date (default: Date.now)
-}
-```
+- Password hashing utilizing `bcryptjs` with salt rounds.
+- Stateless, signed JWT tokens for API authorization.
+- Input validation & sanitization on all critical endpoints.
+- HTTP security headers provided by `Helmet`.
+- CORS origin restriction enabled for production environments.
 
-## Environment Variables
+---
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| PORT | Backend server port | 5000 |
-| MONGODB_URI | MongoDB Atlas connection string | - |
-| JWT_SECRET | Secret key for JWT token generation | - |
-| JWT_EXPIRE | JWT token expiration time | 7d |
-| NODE_ENV | Environment mode | development |
+## 📄 License
 
-## Troubleshooting
+Distributed under the **ISC License**. See `LICENSE` for details.
 
-### MongoDB Connection Issues
-- Ensure your MongoDB Atlas IP whitelist includes your IP address (0.0.0.0/0 for development)
-- Verify your connection string format
-- Check that your database user has the correct permissions
+---
 
-### CORS Errors
-- The backend is configured to allow CORS from the frontend
-- Ensure both servers are running on the correct ports
+<p align="center">
+  Crafted with ❤️ for saving lives.
+</p>
 
-### JWT Token Issues
-- Make sure JWT_SECRET is set in your .env file
-- Check that tokens are being sent in the Authorization header: `Bearer <token>`
-
-## Development Notes
-
-- The backend uses MVC architecture for better code organization
-- The frontend uses React Context for state management
-- Tailwind CSS is used for styling with a red theme (blood donation)
-- The application is designed to be mobile-responsive
-- All passwords are hashed using bcrypt before storage
-
-## Security Considerations
-
-- Never commit `.env` files to version control
-- Use strong JWT_SECRET values in production
-- Implement rate limiting for API endpoints (future enhancement)
-- Add input validation and sanitization (future enhancement)
-- Use HTTPS in production
-
-## License
-
-ISC
-
-## Contact
-
-For questions or support, please open an issue in the repository.
 

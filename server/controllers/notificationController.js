@@ -1,4 +1,5 @@
 const Notification = require('../models/Notification');
+const sendError = require('../utils/sendError');
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
@@ -24,7 +25,7 @@ const getNotifications = async (req, res) => {
       notifications,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -52,7 +53,7 @@ const markAsRead = async (req, res) => {
       notification,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -71,7 +72,7 @@ const markAllAsRead = async (req, res) => {
       message: 'All notifications marked as read',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

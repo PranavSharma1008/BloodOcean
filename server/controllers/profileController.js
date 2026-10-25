@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const formatUser = require('../utils/formatUser');
+const sendError = require('../utils/sendError');
 const { getDistricts } = require('../data/locations');
 
 // @desc    Get user profile
@@ -18,7 +19,7 @@ const getProfile = async (req, res) => {
       user: formatUser(user),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -108,7 +109,7 @@ const updateProfile = async (req, res) => {
       user: formatUser(user),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -123,8 +124,12 @@ const updateAvatar = async (req, res) => {
       return res.status(400).json({ message: 'Avatar data is required' });
     }
 
-    if (avatar.length > 10 * 1024 * 1024) {
-      return res.status(400).json({ message: 'Avatar must be smaller than 10MB' });
+    if (typeof avatar !== 'string' || !/^data:image\/(jpeg|jpg|png|webp|gif);base64,/.test(avatar)) {
+      return res.status(400).json({ message: 'Invalid avatar' });
+    }
+
+    if (avatar.length > 2 * 1024 * 1024) {
+      return res.status(400).json({ message: 'Avatar must be smaller than 2MB' });
     }
 
     const user = await User.findById(req.user.id);
@@ -141,7 +146,7 @@ const updateAvatar = async (req, res) => {
       user: formatUser(user),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -164,7 +169,7 @@ const removeAvatar = async (req, res) => {
       user: formatUser(user),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -184,7 +189,7 @@ const getPublicProfile = async (req, res) => {
       user: formatUser(user),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

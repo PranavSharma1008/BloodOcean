@@ -4,6 +4,7 @@ const BloodRequest = require('../models/BloodRequest');
 const Donation = require('../models/Donation');
 const Camp = require('../models/Camp');
 const Notification = require('../models/Notification');
+const sendError = require('../utils/sendError');
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -17,7 +18,7 @@ const getAllUsers = async (req, res) => {
       users,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -44,7 +45,7 @@ const deleteUser = async (req, res) => {
       message: 'User deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -63,7 +64,7 @@ const getAllEmergencyRequests = async (req, res) => {
       requests,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -85,7 +86,7 @@ const deleteEmergencyRequest = async (req, res) => {
       message: 'Emergency request deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -136,7 +137,7 @@ const getStatistics = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -156,7 +157,7 @@ const getAllBloodRequests = async (req, res) => {
       requests,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -178,7 +179,7 @@ const deleteBloodRequest = async (req, res) => {
       message: 'Blood request deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -197,7 +198,7 @@ const getAllDonations = async (req, res) => {
       donations,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -219,7 +220,7 @@ const deleteDonation = async (req, res) => {
       message: 'Donation deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -238,7 +239,7 @@ const getAllCamps = async (req, res) => {
       camps,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -260,7 +261,7 @@ const deleteCamp = async (req, res) => {
       message: 'Camp deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -279,7 +280,7 @@ const getAllNotifications = async (req, res) => {
       notifications,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -301,7 +302,7 @@ const deleteNotification = async (req, res) => {
       message: 'Notification deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

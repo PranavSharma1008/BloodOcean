@@ -56,8 +56,8 @@ const ForgotPassword = () => {
       setError(t('Passwords do not match.'));
       return;
     }
-    if (password.length < 6) {
-      setError(t('Password must be at least 6 characters.'));
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setError(t('Password must be at least 8 characters and include a letter and a number.'));
       return;
     }
     setLoading(true);

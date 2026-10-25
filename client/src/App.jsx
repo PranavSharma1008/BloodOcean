@@ -9,6 +9,7 @@ import SplashScreen from './components/SplashScreen';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import CompleteProfile from './pages/CompleteProfile';
 import Location from './pages/Location';
@@ -66,6 +67,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
         <Route path="/location" element={<ProtectedRoute><Location /></ProtectedRoute>} />
@@ -74,7 +76,7 @@ function AppContent() {
         <Route path="/update-emergency/:id" element={<ProtectedRoute><UpdateEmergency /></ProtectedRoute>} />
         <Route path="/emergency-requests" element={<ProtectedRoute><EmergencyRequests /></ProtectedRoute>} />
         <Route path="/camps" element={<ProtectedRoute><Camps /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
         <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
         <Route path="/blood-request/:id" element={<ProtectedRoute><BloodRequestMap /></ProtectedRoute>} />
         <Route path="/tracking/:requestId" element={<ProtectedRoute><LiveTracking /></ProtectedRoute>} />

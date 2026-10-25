@@ -1,6 +1,7 @@
 const Camp = require('../models/Camp');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const sendError = require('../utils/sendError');
 
 const normalizeDate = (dateValue, endOfDay = false) => {
   const date = new Date(dateValue);
@@ -52,7 +53,7 @@ const getAllCamps = async (req, res) => {
       .sort({ startDate: 1, date: 1, createdAt: -1 });
     res.status(200).json(camps);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -78,7 +79,18 @@ const createCamp = async (req, res) => {
       : null;
 
     const campData = {
-      ...req.body,
+      campName: req.body.campName,
+      organizerName: req.body.organizerName,
+      state: req.body.state,
+      district: req.body.district,
+      city: req.body.city,
+      address: req.body.address,
+      startTime: req.body.startTime,
+      endTime: req.body.endTime,
+      time: req.body.time,
+      contactNumber: phoneDigits,
+      description: req.body.description,
+      radius: Math.min(Math.max(Number(req.body.radius) || 100, 1), 500),
       createdBy: req.user.id,
       location: organizerLocation || { type: 'Point', coordinates: [0, 0] },
       startDate: normalizeDate(req.body.startDate, false),
@@ -141,7 +153,7 @@ const createCamp = async (req, res) => {
 
     res.status(201).json(responsePayload);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -158,7 +170,7 @@ const getCampById = async (req, res) => {
     
     res.status(200).json(camp);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -186,11 +198,31 @@ const updateCamp = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
     
+    const allowedFields = [
+      'campName',
+      'organizerName',
+      'state',
+      'district',
+      'city',
+      'address',
+      'startTime',
+      'endTime',
+      'time',
+      'contactNumber',
+      'description',
+      'radius',
+    ];
     const updateData = {
-      ...req.body,
       startDate: normalizeDate(startDate, false),
       endDate: normalizeDate(endDate, true),
     };
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = field === 'radius'
+          ? Math.min(Math.max(Number(req.body.radius) || 100, 1), 500)
+          : req.body[field];
+      }
+    }
 
     if (updateData.contactNumber) {
       const phoneDigits = updateData.contactNumber.replace(/\D/g, '');
@@ -207,7 +239,7 @@ const updateCamp = async (req, res) => {
     
     res.status(200).json(updatedCamp);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -231,7 +263,7 @@ const deleteCamp = async (req, res) => {
     await Camp.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'Camp deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

@@ -1,5 +1,8 @@
 const User = require('../models/User');
 const { getDistricts } = require('../data/locations');
+const sendError = require('../utils/sendError');
+
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // @desc    Search nearby donors
 // @route   GET /api/donors/nearby
@@ -43,7 +46,7 @@ const searchNearbyDonors = async (req, res) => {
       };
 
       if (name && name.trim()) {
-        query.name = { $regex: name.trim(), $options: 'i' };
+        query.name = { $regex: escapeRegex(name.trim()), $options: 'i' };
       }
 
       const userIdStr = String(req.user.id || req.user._id);
@@ -123,16 +126,16 @@ const searchNearbyDonors = async (req, res) => {
         profileCompleted: true,
         $or: [
           { state, district },
-          { city: { $regex: new RegExp(`^${district}$`, 'i') } },
+          { city: { $regex: new RegExp(`^${escapeRegex(district)}$`, 'i') } },
         ],
       };
 
       if (city && city.trim()) {
-        query.city = { $regex: city.trim(), $options: 'i' };
+        query.city = { $regex: escapeRegex(city.trim()), $options: 'i' };
       }
 
       if (name && name.trim()) {
-        query.name = { $regex: name.trim(), $options: 'i' };
+        query.name = { $regex: escapeRegex(name.trim()), $options: 'i' };
       }
 
       let donors = await User.find(query).select(
@@ -204,7 +207,7 @@ const searchNearbyDonors = async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

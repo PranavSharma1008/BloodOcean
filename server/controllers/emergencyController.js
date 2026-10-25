@@ -2,6 +2,7 @@ const EmergencyRequest = require('../models/EmergencyRequest');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const Donation = require('../models/Donation');
+const sendError = require('../utils/sendError');
 const { startTracking, endTracking, broadcastToTracking, getIO } = require('../sockets/tracking');
 
 // @desc    Create emergency request
@@ -110,7 +111,7 @@ const createEmergencyRequest = async (req, res) => {
       matchedDonors: matchingDonors.length,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -177,7 +178,7 @@ const getEmergencyRequests = async (req, res) => {
       emergencyRequests,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -198,7 +199,7 @@ const getEmergencyRequestById = async (req, res) => {
       emergencyRequest,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -213,6 +214,10 @@ const updateEmergencyRequest = async (req, res) => {
 
     if (!emergencyRequest) {
       return res.status(404).json({ message: 'Emergency request not found' });
+    }
+
+    if (emergencyRequest.requester.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to update this request' });
     }
 
     // Validate blood group if provided
@@ -255,7 +260,7 @@ const updateEmergencyRequest = async (req, res) => {
       emergencyRequest,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -284,7 +289,7 @@ const deleteEmergencyRequest = async (req, res) => {
       message: 'Emergency request deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -382,7 +387,7 @@ const respondToRequest = async (req, res) => {
       message: displayMessage,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -515,7 +520,7 @@ const acceptResponder = async (req, res) => {
         : `Responder accepted. ${remainingNeeded} more unit(s) still needed.`,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -578,7 +583,7 @@ const declineResponder = async (req, res) => {
       message: 'Responder declined.',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -608,7 +613,7 @@ const getResponders = async (req, res) => {
       responders: emergencyRequest.responders,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -666,7 +671,7 @@ const getEmergencyTrackingSession = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -726,7 +731,7 @@ const completeEmergencyRequest = async (req, res) => {
       message: 'Request completed successfully.',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

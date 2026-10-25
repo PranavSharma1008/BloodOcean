@@ -1,21 +1,17 @@
 const User = require('../models/User');
 const formatUser = require('../utils/formatUser');
+const sendError = require('../utils/sendError');
 
 // @desc    Update user location
 // @route   PUT /api/users/location
 // @access  Private
 const updateLocation = async (req, res) => {
   try {
-    const { latitude, longitude } = req.body;
+    const latitude = Number(req.body.latitude);
+    const longitude = Number(req.body.longitude);
 
-    // Validation
-    if (latitude === undefined || longitude === undefined) {
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
       return res.status(400).json({ message: 'Latitude and longitude are required' });
-    }
-
-    // Validate coordinates
-    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      return res.status(400).json({ message: 'Latitude and longitude must be numbers' });
     }
 
     if (latitude < -90 || latitude > 90) {
@@ -50,7 +46,7 @@ const updateLocation = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

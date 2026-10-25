@@ -108,11 +108,9 @@ const sendEmail = async ({ to, subject, text }) => {
     };
   }
 
-  console.log(`[EMAIL] Sending via ${service || host} to ${to}`);
-
   const transporter = nodemailer.createTransport({
     ...transportOptions,
-    tls: { rejectUnauthorized: false },
+    tls: { rejectUnauthorized: true },
   });
 
   const otp = text.match(/\d{6}/)?.[0] || '';
@@ -125,7 +123,7 @@ const sendEmail = async ({ to, subject, text }) => {
     html: htmlTemplate(otp),
   });
 
-  console.log(`[EMAIL] Sent successfully to ${to}`);
+  return { skipped: false };
 };
 
 module.exports = sendEmail;

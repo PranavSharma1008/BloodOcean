@@ -24,8 +24,8 @@ const Register = () => {
       setError(t('Passwords do not match'));
       return;
     }
-    if (formData.password.length < 6) {
-      setError(t('Password must be at least 6 characters'));
+    if (formData.password.length < 8 || !/[A-Za-z]/.test(formData.password) || !/\d/.test(formData.password)) {
+      setError(t('Password must be at least 8 characters and include a letter and a number'));
       return;
     }
     const result = await register(formData.name, formData.email, formData.password);

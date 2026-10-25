@@ -1,6 +1,7 @@
 const BloodRequest = require('../models/BloodRequest');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const sendError = require('../utils/sendError');
 const { startTracking, broadcastToTracking } = require('../sockets/tracking');
 
 // @desc    Create blood request to a specific donor
@@ -102,7 +103,7 @@ const createBloodRequest = async (req, res) => {
       bloodRequest,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -127,7 +128,7 @@ const getMyBloodRequests = async (req, res) => {
       requests,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -201,7 +202,7 @@ const acceptBloodRequest = async (req, res) => {
       bloodRequest,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -247,7 +248,7 @@ const declineBloodRequest = async (req, res) => {
       bloodRequest,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -316,7 +317,7 @@ const completeBloodRequest = async (req, res) => {
       bloodRequest,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -345,7 +346,7 @@ const getBloodRequestById = async (req, res) => {
       bloodRequest,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -393,7 +394,7 @@ const getTrackingSession = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

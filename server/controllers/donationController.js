@@ -1,4 +1,5 @@
 const Donation = require('../models/Donation');
+const sendError = require('../utils/sendError');
 
 const BADGE_THRESHOLDS = [
   { level: 'Diamond', min: 50 },
@@ -60,7 +61,7 @@ const createDonation = async (req, res) => {
       badge,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -80,7 +81,7 @@ const getDonations = async (req, res) => {
       donations,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -101,7 +102,7 @@ const getDonationById = async (req, res) => {
       donation,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -124,7 +125,7 @@ const deleteDonation = async (req, res) => {
       message: 'Donation deleted successfully',
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 
@@ -175,7 +176,7 @@ const updateDonation = async (req, res) => {
       donation,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return sendError(res, error);
   }
 };
 

@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
 require('dotenv').config();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 try {
   const pids = execSync(`lsof -ti:${PORT} -sTCP:LISTEN`, { stdio: ['ignore', 'pipe', 'ignore'] })

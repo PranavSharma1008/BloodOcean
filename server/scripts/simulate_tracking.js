@@ -1,8 +1,9 @@
 const axios = require('axios');
 const { io } = require('socket.io-client');
 
-const API = 'http://localhost:5000';
-const SOCKET = 'http://localhost:5000';
+const PORT = process.env.PORT || 5001;
+const API = `http://localhost:${PORT}`;
+const SOCKET = `http://localhost:${PORT}`;
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
